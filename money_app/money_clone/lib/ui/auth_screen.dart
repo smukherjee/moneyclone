@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:money_clone/auth/auth_service.dart';
 import 'package:money_clone/ui/theme.dart';
 

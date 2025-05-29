@@ -6,20 +6,28 @@ import 'package:money_clone/ui/main_screen.dart';
 import 'package:money_clone/ui/theme.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+// Import platform helper
+import 'src/platform_helper.dart';
 
 void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize the database for desktop platforms
-  if (Platform.isWindows || Platform.isLinux) {
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
+  // Initialize the database for desktop platforms, but skip for web
+  if (!kIsWeb) {
+    initPlatformSpecificFeatures();
   }
   
-  // Initialize the database helper
-  await DatabaseHelper().database;
+  // Initialize the database helper - this will be skipped on web
+  if (!kIsWeb) {
+    try {
+      await DatabaseHelper().database;
+    } catch (e) {
+      print('Database initialization error: $e');
+    }
+  }
   
   runApp(const MyApp());
 }
