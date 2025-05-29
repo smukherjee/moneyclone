@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:money_clone/data/models.dart';
 import 'package:money_clone/logic/providers.dart';
 import 'package:money_clone/ui/widgets.dart';
+import 'package:money_clone/services/navigation_service.dart';
 import 'package:provider/provider.dart';
-// import 'package:syncfusion_flutter_charts/charts.dart'; // Removed due to compatibility issues
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -27,7 +27,8 @@ class HomeScreen extends StatelessWidget {
             },
           ),
         ],
-      ),      body: RefreshIndicator(
+      ),
+      body: RefreshIndicator(
         onRefresh: () {
           // Store providers before async gap to avoid using BuildContext across async gap
           final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
@@ -55,7 +56,8 @@ class HomeScreen extends StatelessWidget {
                     income: totalIncome,
                     expenses: totalExpense,
                     onTap: () {
-                      // Navigate to accounts
+                      // Navigate to Accounts tab
+                      context.read<NavigationService>().navigateToTab(3);
                     },
                   );
                 },
@@ -65,51 +67,21 @@ class HomeScreen extends StatelessWidget {
               _buildExpenseChart(context),
 
               // Recent transactions
-              const SectionHeader(
+              SectionHeader(
                 title: 'Recent Transactions',
-                onSeeAllPressed: null, // Navigate to transactions
+                onSeeAllPressed: () {
+                  // Navigate to Transactions tab
+                  context.read<NavigationService>().navigateToTab(1);
+                },
               ),
               _buildRecentTransactions(context),
             ],
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Show add transaction dialog
-        },
-        child: const Icon(Icons.add),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt_outlined),
-            activeIcon: Icon(Icons.list_alt),
-            label: 'Transactions',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.pie_chart_outline),
-            activeIcon: Icon(Icons.pie_chart),
-            label: 'Reports',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            activeIcon: Icon(Icons.account_balance_wallet),
-            label: 'Accounts',
-          ),
-        ],
-        onTap: (index) {
-          // Navigate to selected tab
-        },
-      ),
     );
   }
+
   Widget _buildExpenseChart(BuildContext context) {
     return Consumer<TransactionProvider>(
       builder: (context, provider, _) {
@@ -210,7 +182,8 @@ class HomeScreen extends StatelessWidget {
             message: 'No transactions yet. Tap + to add one.',
             icon: Icons.receipt_long_outlined,
             onActionPressed: () {
-              // Show add transaction dialog
+              // Navigate to transactions tab to add a new transaction
+              context.read<NavigationService>().navigateToTab(1);
             },
             actionLabel: 'Add Transaction',
           );
@@ -224,7 +197,8 @@ class HomeScreen extends StatelessWidget {
             return TransactionListItem(
               transaction: recentTransactions[index],
               onTap: () {
-                // Navigate to transaction details
+                // Navigate to transactions tab to show details
+                context.read<NavigationService>().navigateToTab(1);
               },
             );
           },
