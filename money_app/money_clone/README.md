@@ -103,7 +103,19 @@ flutter pub get
 flutter run
 ```
 
-Note: For web deployment, ensure your web server's MIME types include `.wasm` files with the `application/wasm` content type.
+Note: For web deployment:
+1. Ensure your web server's MIME types include `.wasm` files with the `application/wasm` content type.
+2. Configure CORS headers for SQLite WASM files:
+   ```apache
+   <Files "*.wasm">
+       Header set Cross-Origin-Opener-Policy "same-origin"
+       Header set Cross-Origin-Embedder-Policy "require-corp"
+   </Files>
+   ```
+3. Version Control Considerations:
+   - Add `web/sqlite3/*.wasm` and `web/sqlite3/*.js` to your version control
+   - Include the specific version number in your documentation
+   - Consider using git-lfs for WASM files
 
 ## License
 
@@ -111,6 +123,12 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgements
 
-- [Flutter](https://flutter.dev/)
-- [Syncfusion](https://www.syncfusion.com/)
-- [SQLite](https://www.sqlite.org/)
+- [Flutter](https://flutter.dev/) - UI framework
+- [Provider](https://pub.dev/packages/provider) - State management
+- [SQLite](https://www.sqlite.org/) - Database engine
+- [sqlite3.js](https://github.com/simolus3/sqlite3.js) - SQLite web support
+- [Syncfusion Flutter Charts](https://www.syncfusion.com/flutter-widgets) - Data visualization
+- [UUID](https://pub.dev/packages/uuid) - Unique identifier generation
+- [Intl](https://pub.dev/packages/intl) - Internationalization and formatting
+- [Google ML Kit](https://developers.google.com/ml-kit) - OCR capabilities
+- [Local Auth](https://pub.dev/packages/local_auth) - Biometric authentication
