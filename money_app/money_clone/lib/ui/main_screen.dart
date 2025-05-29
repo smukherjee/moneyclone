@@ -52,17 +52,13 @@ class MainScreen extends StatelessWidget {
                 ),
               ],
             ),
-            floatingActionButton: navigationService.currentIndex == 1 ? null : FloatingActionButton(
-              onPressed: () {
-                // Navigate to transaction screen and show add dialog
-                navigationService.navigateToTab(1);
-                // Add delay to allow screen transition before showing dialog
-                Future.delayed(const Duration(milliseconds: 300), () {
-                  // Show add transaction dialog
-                });
-              },
-              child: const Icon(Icons.add),
-            ),
+            floatingActionButton: navigationService.floatingActionButtonLabel.isEmpty 
+              ? null 
+              : FloatingActionButton(
+                  onPressed: () => navigationService.onFloatingActionButtonPressed(context),
+                  child: const Icon(Icons.add),
+                  tooltip: navigationService.floatingActionButtonLabel,
+                ),
           );
         },
       ),

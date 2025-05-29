@@ -37,59 +37,72 @@ class TransactionScreen extends StatelessWidget {
           
           // Transactions list
           Expanded(
-            child: _buildTransactionList(context),
-          ),
+            child: _buildTransactionList(context),          ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showAddTransactionDialog(context);
-        },
-        child: const Icon(Icons.add),
-      ),
+      // We don't need a FloatingActionButton here as it's already handled by MainScreen
+      // through the NavigationService
     );
   }
-
   Widget _buildCategoryFilter(BuildContext context) {
-    return Container(
-      height: 50,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          CategoryChip(
-            name: 'All',
-            isSelected: true,
-            onTap: () {},
+    return Consumer<TransactionProvider>(
+      builder: (context, provider, _) {
+        final currentFilter = provider.filter;
+        
+        return Container(
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              CategoryChip(
+                name: 'All',
+                isSelected: currentFilter == null,
+                onTap: () {
+                  provider.clearFilter();
+                },
+              ),
+              CategoryChip(
+                name: 'Income',
+                isSelected: currentFilter == TransactionType.income,
+                onTap: () {
+                  provider.setFilter(TransactionType.income);
+                },
+              ),
+              CategoryChip(
+                name: 'Expense',
+                isSelected: currentFilter == TransactionType.expense,
+                onTap: () {
+                  provider.setFilter(TransactionType.expense);
+                },
+              ),
+              CategoryChip(
+                name: 'Transfer',
+                isSelected: currentFilter == TransactionType.transfer,
+                onTap: () {
+                  provider.setFilter(TransactionType.transfer);
+                },
+              ),
+            ],
           ),
-          CategoryChip(
-            name: 'Income',
-            isSelected: false,
-            onTap: () {},
-          ),
-          CategoryChip(
-            name: 'Expense',
-            isSelected: false,
-            onTap: () {},
-          ),
-          CategoryChip(
-            name: 'Transfer',
-            isSelected: false,
-            onTap: () {},
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
-
   Widget _buildTransactionList(BuildContext context) {
     return Consumer<TransactionProvider>(
       builder: (context, provider, _) {
         final transactions = provider.transactions;
+        final filterType = provider.filter;
         
         if (transactions.isEmpty) {
+          String message = 'No transactions found';
+          if (filterType != null) {
+            message = 'No ${filterType.toString().split('.').last} transactions found';
+          }
+          
           return EmptyStateWidget(
-            message: 'No transactions found',
+            message: message,
             icon: Icons.receipt_long_outlined,
             onActionPressed: () {
               _showAddTransactionDialog(context);

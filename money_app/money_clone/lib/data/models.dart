@@ -4,6 +4,8 @@ enum TransactionType { income, expense, transfer }
 
 enum PaymentMethod { cash, creditCard, debitCard, bankTransfer, other }
 
+enum AccountType { checking, savings, cash, creditCard, investment, other }
+
 class Transaction {
   final String id;
   final String title;
@@ -64,6 +66,7 @@ class Account {
   final String id;
   final String name;
   final double balance;
+  final AccountType type;
   final String? accountNumber;
   final String? bankName;
 
@@ -71,6 +74,7 @@ class Account {
     required this.id,
     required this.name,
     required this.balance,
+    required this.type,
     this.accountNumber,
     this.bankName,
   });
@@ -78,8 +82,8 @@ class Account {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'name': name,
-      'balance': balance,
+      'name': name,      'balance': balance,
+      'type': 'AccountType.${type.name}',
       'accountNumber': accountNumber,
       'bankName': bankName,
     };
@@ -88,8 +92,12 @@ class Account {
   factory Account.fromMap(Map<String, dynamic> map) {
     return Account(
       id: map['id'],
-      name: map['name'],
-      balance: map['balance'],
+      name: map['name'],      balance: map['balance'],
+      type: map['type'] != null
+          ? AccountType.values.firstWhere(
+              (e) => 'AccountType.${e.name}' == map['type'],
+              orElse: () => AccountType.other)
+          : AccountType.other,
       accountNumber: map['accountNumber'],
       bankName: map['bankName'],
     );

@@ -3,13 +3,14 @@
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite/sqflite.dart';
 
 // Conditionally import platform-specific libraries
 import 'platform_io.dart' if (dart.library.html) 'platform_web.dart' as platform;
 
 void initPlatformSpecificFeatures() {
   if (kIsWeb) {
-    // Web platform - no specific initialization needed
+    // Web platform handled separately in WebDatabaseHelper
     return;
   }
   

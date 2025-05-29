@@ -6,13 +6,28 @@ class TransactionProvider with ChangeNotifier {
   final DatabaseHelper _dbHelper = DatabaseHelper();
   List<models.Transaction> _transactions = [];
   bool _isLoading = false;
+  models.TransactionType? _filter;
 
   TransactionProvider() {
     fetchTransactions();
   }
 
-  List<models.Transaction> get transactions => _transactions;
+  List<models.Transaction> get transactions => _filter == null
+      ? _transactions
+      : _transactions.where((t) => t.type == _filter).toList();
+
   bool get isLoading => _isLoading;
+  models.TransactionType? get filter => _filter;
+
+  void setFilter(models.TransactionType? type) {
+    _filter = type;
+    notifyListeners();
+  }
+
+  void clearFilter() {
+    _filter = null;
+    notifyListeners();
+  }
 
   Future<void> fetchTransactions() async {
     _isLoading = true;
@@ -87,12 +102,12 @@ class TransactionProvider with ChangeNotifier {
 
   Map<String, double> getCategorySpending(models.TransactionType type) {
     final Map<String, double> result = {};
-    
+
     for (var transaction in _transactions.where((t) => t.type == type)) {
       final category = transaction.category ?? 'Uncategorized';
       result[category] = (result[category] ?? 0) + transaction.amount;
     }
-    
+
     return result;
   }
 }
@@ -173,9 +188,9 @@ class CategoryProvider with ChangeNotifier {
   }
 
   List<models.Category> get categories => _categories;
-  List<models.Category> get expenseCategories => 
+  List<models.Category> get expenseCategories =>
       _categories.where((c) => c.type == models.TransactionType.expense).toList();
-  List<models.Category> get incomeCategories => 
+  List<models.Category> get incomeCategories =>
       _categories.where((c) => c.type == models.TransactionType.income).toList();
   bool get isLoading => _isLoading;
 

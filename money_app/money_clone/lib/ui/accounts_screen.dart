@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:money_clone/data/models.dart';
+import 'package:money_clone/data/models.dart' as models;
 import 'package:money_clone/logic/providers.dart';
 import 'package:money_clone/ui/theme.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +8,21 @@ import 'package:uuid/uuid.dart';
 
 class AccountsScreen extends StatelessWidget {
   const AccountsScreen({super.key});
+  static IconData getAccountTypeIcon(models.AccountType type) {
+    switch (type) {
+      case models.AccountType.checking:
+        return Icons.account_balance;
+      case models.AccountType.savings:
+        return Icons.savings;
+      case models.AccountType.cash:
+        return Icons.money;
+      case models.AccountType.creditCard:
+        return Icons.credit_card;      case models.AccountType.investment:
+        return Icons.trending_up;
+      case models.AccountType.other:
+        return Icons.account_balance_wallet;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,12 +87,9 @@ class AccountsScreen extends StatelessWidget {
               ),
             ],
           );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddAccountDialog(context),
-        child: const Icon(Icons.add),
-      ),
+        },      ),
+      // We don't need a FloatingActionButton here as it's already handled by MainScreen
+      // through the NavigationService
     );
   }
 
@@ -136,19 +148,8 @@ class AccountsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAccountCard(BuildContext context, Account account) {
-    final currencyFormat = NumberFormat.currency(symbol: '\$');
-    
-    IconData accountIcon;
-    if (account.name.toLowerCase().contains('cash')) {
-      accountIcon = Icons.money;
-    } else if (account.name.toLowerCase().contains('credit')) {
-      accountIcon = Icons.credit_card;
-    } else if (account.name.toLowerCase().contains('saving')) {
-      accountIcon = Icons.savings;
-    } else {
-      accountIcon = Icons.account_balance;
-    }
+  Widget _buildAccountCard(BuildContext context, models.Account account) {    final currencyFormat = NumberFormat.currency(symbol: '\$');
+      IconData accountIcon = AccountsScreen.getAccountTypeIcon(account.type);
     
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -240,6 +241,7 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
   final _balanceController = TextEditingController();
   final _accountNumberController = TextEditingController();
   final _bankNameController = TextEditingController();
+  models.AccountType _selectedAccountType = models.AccountType.checking;
 
   @override
   void dispose() {
@@ -284,6 +286,76 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
                 Text(
                   'Add Account',
                   style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 24),
+
+                // Account type selector
+                Text(
+                  'Account Type',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 90,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: models.AccountType.values.length,
+                    itemBuilder: (context, index) {
+                      final type = models.AccountType.values[index];
+                      final isSelected = type == _selectedAccountType;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: InkWell(
+                          onTap: () {
+                            setState(() {
+                              _selectedAccountType = type;
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            width: 80,
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppTheme.primaryColor.withOpacity(0.1)
+                                  : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppTheme.primaryColor
+                                    : Colors.grey.shade300,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  AccountsScreen.getAccountTypeIcon(type),
+                                  color: isSelected
+                                      ? AppTheme.primaryColor
+                                      : Colors.grey.shade700,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  type.name.replaceFirst(
+                                    type.name[0],
+                                    type.name[0].toUpperCase(),
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isSelected
+                                        ? AppTheme.primaryColor
+                                        : Colors.grey.shade700,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
                 const SizedBox(height: 24),
                 
@@ -363,10 +435,11 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
 
   void _saveAccount() {
     if (_formKey.currentState!.validate()) {
-      final account = Account(
+      final account = models.Account(
         id: const Uuid().v4(),
         name: _nameController.text,
         balance: double.parse(_balanceController.text),
+        type: _selectedAccountType,
         bankName: _bankNameController.text.isEmpty ? null : _bankNameController.text,
         accountNumber: _accountNumberController.text.isEmpty ? null : _accountNumberController.text,
       );

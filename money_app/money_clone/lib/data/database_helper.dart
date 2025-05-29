@@ -1,33 +1,46 @@
 import 'dart:async';
-
+import 'package:flutter/foundation.dart';
 import 'package:money_clone/data/models.dart' as models;
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:sqflite/sqlite_api.dart';
+import 'package:money_clone/data/web_database_helper.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   static Database? _database;
+  static const String inMemoryDatabasePath = ':memory:';
 
   factory DatabaseHelper() => _instance;
 
-  DatabaseHelper._internal();
-
-  Future<Database> get database async {
+  DatabaseHelper._internal();  Future<Database> get database async {
     if (_database != null) return _database!;
+    
+    // Both web and native platforms will use the same code path now,
+    // since we've properly initialized the database factory for each platform
     _database = await _initDatabase();
+    
     return _database!;
-  }
-
-  Future<Database> _initDatabase() async {
-    final documentsDirectory = await getApplicationDocumentsDirectory();
-    final path = join(documentsDirectory.path, 'money_clone.db');
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: _createDb,
-    );
+  }  Future<Database> _initDatabase() async {
+    if (kIsWeb) {
+      // For web, use WebDatabaseHelper with IndexedDB
+      return WebDatabaseHelper.openWebDatabase(
+        'money_clone_db',
+        version: 1,
+        onCreate: _createDb,
+      );
+    } else {
+      // For native platforms
+      final documentsDirectory = await getApplicationDocumentsDirectory();
+      final path = join(documentsDirectory.path, 'money_clone.db');
+      return await openDatabase(
+        path,
+        version: 1,
+        onCreate: _createDb,
+      );
+    }
   }
 
   Future<void> _createDb(Database db, int version) async {
@@ -45,14 +58,13 @@ class DatabaseHelper {
         accountId TEXT,
         FOREIGN KEY (accountId) REFERENCES accounts(id) ON DELETE SET NULL
       )
-    ''');
-
-    // Create accounts table
+    ''');    // Create accounts table
     await db.execute('''
       CREATE TABLE accounts(
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         balance REAL NOT NULL,
+        type TEXT NOT NULL,
         accountNumber TEXT,
         bankName TEXT
       )
@@ -114,13 +126,13 @@ class DatabaseHelper {
       });
     }
   }
-  
-  Future<void> _createDefaultAccount(Database db) async {
+    Future<void> _createDefaultAccount(Database db) async {
     final uuid = Uuid();
     await db.insert('accounts', {
       'id': uuid.v4(),
       'name': 'Cash',
       'balance': 0.0,
+      'type': models.AccountType.cash.toString(),
       'accountNumber': null,
       'bankName': null,
     });

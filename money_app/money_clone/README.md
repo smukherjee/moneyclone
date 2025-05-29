@@ -12,8 +12,10 @@ A cross-platform personal finance application built with Flutter. This app helps
 ### Core Functionality
 - **Transaction Management**: Add, edit, and delete financial transactions
 - **Categorization**: Categorize transactions for better financial tracking
+- **Account Types**: Support for Checking, Savings, Cash, Credit Card, and Investment accounts with customized icons
 - **Multiple Accounts**: Manage multiple financial accounts in one place
 - **Reports & Analytics**: Gain insights through detailed financial reports
+- **Balance Tracking**: Real-time balance updates and total wealth overview
 
 ### Security
 - **Biometric Authentication**: Secure access with fingerprint or face recognition
@@ -49,11 +51,13 @@ The application is built with a clean architecture approach:
 
 - **Framework**: Flutter
 - **Language**: Dart
-- **Database**: SQLite
-- **State Management**: Provider
+- **Database**: SQLite with custom data models
+- **State Management**: Provider with ChangeNotifier
+- **UI Components**: Material Design with custom theming
 - **Charts**: Syncfusion Flutter Charts
 - **Authentication**: Local Auth
 - **OCR**: Google ML Kit
+- **Data Helpers**: UUID, Intl formatters
 
 ## Getting Started
 
@@ -73,10 +77,33 @@ git clone https://github.com/yourusername/money_clone.git
 flutter pub get
 ```
 
-3. Run the application
+3. For web platform, set up SQLite:
+   - Add SQLite wasm files to your `web` directory:
+   ```powershell
+   New-Item -ItemType Directory -Path "web/sqlite3" -Force
+   Invoke-WebRequest -Uri "https://github.com/simolus3/sqlite3.js/releases/latest/download/sqlite3.wasm" -OutFile "web/sqlite3/sqlite3.wasm"
+   Invoke-WebRequest -Uri "https://github.com/simolus3/sqlite3.js/releases/latest/download/sqlite3.js" -OutFile "web/sqlite3/sqlite3.js"
+   ```
+   
+   - Update your `web/index.html` to include SQLite initialization:
+   ```html
+   <head>
+     <!-- Add this before the "main.dart.js" script -->
+     <script defer src="sqlite3/sqlite3.js"></script>
+     <script>
+       window.sqlite3InitModule = function() {
+         return initSqlJs({ locateFile: file => `sqlite3/${file}` });
+       };
+     </script>
+   </head>
+   ```
+
+4. Run the application
 ```
 flutter run
 ```
+
+Note: For web deployment, ensure your web server's MIME types include `.wasm` files with the `application/wasm` content type.
 
 ## License
 
