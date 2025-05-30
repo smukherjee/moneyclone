@@ -17,7 +17,8 @@ class AccountsScreen extends StatelessWidget {
       case models.AccountType.cash:
         return Icons.money;
       case models.AccountType.creditCard:
-        return Icons.credit_card;      case models.AccountType.investment:
+        return Icons.credit_card;
+      case models.AccountType.investment:
         return Icons.trending_up;
       case models.AccountType.other:
         return Icons.account_balance_wallet;
@@ -27,17 +28,15 @@ class AccountsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Accounts'),
-      ),
+      appBar: AppBar(title: const Text('Accounts')),
       body: Consumer<AccountProvider>(
         builder: (context, provider, _) {
           if (provider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
-          
+
           final accounts = provider.accounts;
-          
+
           if (accounts.isEmpty) {
             return Center(
               child: Column(
@@ -71,7 +70,7 @@ class AccountsScreen extends StatelessWidget {
               ),
             );
           }
-          
+
           return Column(
             children: [
               _buildTotalBalanceCard(context, provider),
@@ -87,26 +86,27 @@ class AccountsScreen extends StatelessWidget {
               ),
             ],
           );
-        },      ),
+        },
+      ),
       // We don't need a FloatingActionButton here as it's already handled by MainScreen
       // through the NavigationService
     );
   }
 
-  Widget _buildTotalBalanceCard(BuildContext context, AccountProvider provider) {
+  Widget _buildTotalBalanceCard(
+    BuildContext context,
+    AccountProvider provider,
+  ) {
     final totalBalance = provider.getTotalBalance();
     final currencyFormat = NumberFormat.currency(symbol: '\$');
-    
+
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppTheme.primaryColor,
-            AppTheme.primaryColor.withBlue(200),
-          ],
+          colors: [AppTheme.primaryColor, AppTheme.primaryColor.withBlue(200)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -148,14 +148,13 @@ class AccountsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAccountCard(BuildContext context, models.Account account) {    final currencyFormat = NumberFormat.currency(symbol: '\$');
-      IconData accountIcon = AccountsScreen.getAccountTypeIcon(account.type);
-    
+  Widget _buildAccountCard(BuildContext context, models.Account account) {
+    final currencyFormat = NumberFormat.currency(symbol: '\$');
+    IconData accountIcon = AccountsScreen.getAccountTypeIcon(account.type);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: () {
           // Navigate to account detail screen
@@ -198,7 +197,9 @@ class AccountsScreen extends StatelessWidget {
                       ),
                     if (account.accountNumber != null)
                       Text(
-                        'xxxx ${account.accountNumber!.substring(account.accountNumber!.length - 4)}',
+                        account.accountNumber!.length >= 4
+                            ? 'xxxx ${account.accountNumber!.substring(account.accountNumber!.length - 4)}'
+                            : 'xxxx ${account.accountNumber!}',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                   ],
@@ -208,7 +209,10 @@ class AccountsScreen extends StatelessWidget {
                 currencyFormat.format(account.balance),
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: account.balance >= 0 ? AppTheme.incomeColor : AppTheme.expenseColor,
+                  color:
+                      account.balance >= 0
+                          ? AppTheme.incomeColor
+                          : AppTheme.expenseColor,
                 ),
               ),
             ],
@@ -316,14 +320,16 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
                             width: 80,
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppTheme.primaryColor.withOpacity(0.1)
-                                  : Colors.grey.shade100,
+                              color:
+                                  isSelected
+                                      ? AppTheme.primaryColor.withOpacity(0.1)
+                                      : Colors.grey.shade100,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: isSelected
-                                    ? AppTheme.primaryColor
-                                    : Colors.grey.shade300,
+                                color:
+                                    isSelected
+                                        ? AppTheme.primaryColor
+                                        : Colors.grey.shade300,
                               ),
                             ),
                             child: Column(
@@ -331,9 +337,10 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
                               children: [
                                 Icon(
                                   AccountsScreen.getAccountTypeIcon(type),
-                                  color: isSelected
-                                      ? AppTheme.primaryColor
-                                      : Colors.grey.shade700,
+                                  color:
+                                      isSelected
+                                          ? AppTheme.primaryColor
+                                          : Colors.grey.shade700,
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
@@ -343,9 +350,10 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
                                   ),
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: isSelected
-                                        ? AppTheme.primaryColor
-                                        : Colors.grey.shade700,
+                                    color:
+                                        isSelected
+                                            ? AppTheme.primaryColor
+                                            : Colors.grey.shade700,
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
@@ -358,7 +366,7 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Account name field
                 TextFormField(
                   controller: _nameController,
@@ -375,7 +383,7 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Balance field
                 TextFormField(
                   controller: _balanceController,
@@ -396,7 +404,7 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Bank name field (optional)
                 TextFormField(
                   controller: _bankNameController,
@@ -407,7 +415,7 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Account number field (optional)
                 TextFormField(
                   controller: _accountNumberController,
@@ -419,7 +427,7 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Save button
                 ElevatedButton(
                   onPressed: _saveAccount,
@@ -440,13 +448,16 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
         name: _nameController.text,
         balance: double.parse(_balanceController.text),
         type: _selectedAccountType,
-        bankName: _bankNameController.text.isEmpty ? null : _bankNameController.text,
-        accountNumber: _accountNumberController.text.isEmpty ? null : _accountNumberController.text,
+        bankName:
+            _bankNameController.text.isEmpty ? null : _bankNameController.text,
+        accountNumber:
+            _accountNumberController.text.isEmpty
+                ? null
+                : _accountNumberController.text,
       );
-      
-      Provider.of<AccountProvider>(context, listen: false)
-          .addAccount(account);
-      
+
+      Provider.of<AccountProvider>(context, listen: false).addAccount(account);
+
       Navigator.pop(context);
     }
   }

@@ -7,8 +7,8 @@ plugins {
 
 android {
     namespace = "com.example.money_clone"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 35  // Update to match plugin requirements
+    ndkVersion = "27.0.12077973"  // Use specific NDK version required by Flutter plugins
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -34,6 +34,15 @@ android {
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
+            isMinifyEnabled = false  // Disable minification for now
+            isShrinkResources = false  // Disable resource shrinking
+            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("debug")
+            
+            // Add this to handle the ML Kit missing classes issue
+            proguardFile("src/main/res/raw/keep.xml")
+        }
+        debug {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -41,4 +50,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Add Play Core dependency for dynamic feature modules support
+    implementation("com.google.android.play:core:1.10.3")
 }
