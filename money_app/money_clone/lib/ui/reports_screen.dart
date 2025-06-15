@@ -58,10 +58,10 @@ class _ReportsScreenState extends State<ReportsScreen>
       ),
       body: Consumer<TransactionProvider>(
         builder: (context, transactionProvider, _) {
-          final transactions = transactionProvider.transactions;
-          final categorySpending = transactionProvider.getCategorySpending(
-            TransactionType.expense,
-          );
+          //final transactions = transactionProvider.transactions;
+          //final categorySpending = transactionProvider.getCategorySpending(
+          //  TransactionType.expense,
+          //);
 
           return Column(
             children: [
