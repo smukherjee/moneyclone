@@ -113,4 +113,17 @@ class AuthService {
       return false;
     }
   }
+
+  Future<bool> isBiometricEnrolled() async {
+    if (kIsWeb) return false;
+
+    try {
+      final availableBiometrics = await _localAuth.getAvailableBiometrics();
+      // If we have any biometrics enrolled, the list won't be empty
+      return availableBiometrics.isNotEmpty;
+    } on PlatformException catch (e) {
+      _logger.error('Error checking biometric enrollment', e);
+      return false;
+    }
+  }
 }

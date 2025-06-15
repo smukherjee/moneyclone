@@ -4,7 +4,16 @@ import 'package:money_clone/data/models.dart';
 import 'package:money_clone/logic/providers.dart';
 import 'package:money_clone/ui/theme.dart';
 import 'package:provider/provider.dart';
-// import 'package:syncfusion_flutter_charts/charts.dart'; // Removed due to compatibility issues
+import 'package:fl_chart/fl_chart.dart';
+
+// Chart data class for reports
+class ChartData {
+  final String category;
+  final double amount;
+  final DateTime? date;
+
+  ChartData(this.category, this.amount, {this.date});
+}
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -47,16 +56,25 @@ class _ReportsScreenState extends State<ReportsScreen>
           tabs: const [Tab(text: 'Overview'), Tab(text: 'Categories')],
         ),
       ),
-      body: Column(
-        children: [
-          _buildPeriodSelector(),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [_buildOverviewTab(), _buildCategoriesTab()],
-            ),
-          ),
-        ],
+      body: Consumer<TransactionProvider>(
+        builder: (context, transactionProvider, _) {
+          final transactions = transactionProvider.transactions;
+          final categorySpending = transactionProvider.getCategorySpending(
+            TransactionType.expense,
+          );
+
+          return Column(
+            children: [
+              _buildPeriodSelector(),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [_buildOverviewTab(), _buildCategoriesTab()],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -103,24 +121,76 @@ class _ReportsScreenState extends State<ReportsScreen>
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 16),
-              _buildPlaceholderChart(
-                'Income vs Expenses Chart',
-                'Income: \$${provider.getTotalIncome().toStringAsFixed(2)}\nExpenses: \$${provider.getTotalExpense().toStringAsFixed(2)}',
-              ),
+              _buildIncomeVsExpenseChart(provider),
               const SizedBox(height: 24),
               Text(
                 'Transaction Trend',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 16),
-              _buildPlaceholderChart(
-                'Transaction Trend Chart',
-                'Historical transaction data will be displayed here',
-              ),
+              _buildTransactionTrendChart(provider),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildCategoryPieChart(
+    TransactionProvider provider,
+    TransactionType type,
+  ) {
+    final categorySpending = provider.getCategorySpending(type);
+
+    if (categorySpending.isEmpty) {
+      return const SizedBox(
+        height: 300,
+        child: Center(child: Text('No data available')),
+      );
+    }
+
+    final colors = [
+      Colors.blue,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.red,
+      Colors.teal,
+      Colors.amber,
+      Colors.indigo,
+    ];
+
+    final sections =
+        categorySpending.entries.toList().asMap().entries.map((entry) {
+          final index = entry.key;
+          final categoryEntry = entry.value;
+          final percentage =
+              (categoryEntry.value /
+                  categorySpending.values.reduce((a, b) => a + b)) *
+              100;
+
+          return PieChartSectionData(
+            value: categoryEntry.value,
+            title: '${categoryEntry.key}\n${percentage.toStringAsFixed(1)}%',
+            color: colors[index % colors.length],
+            radius: 80,
+            titleStyle: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          );
+        }).toList();
+
+    return SizedBox(
+      height: 300,
+      child: PieChart(
+        PieChartData(
+          sections: sections,
+          centerSpaceRadius: 40,
+          sectionsSpace: 2,
+        ),
+      ),
     );
   }
 
@@ -137,17 +207,17 @@ class _ReportsScreenState extends State<ReportsScreen>
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 16),
-              _buildCategoryList(provider, TransactionType.expense),
+              _buildCategoryPieChart(provider, TransactionType.expense),
               const SizedBox(height: 24),
               Text(
                 'Income by Category',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 16),
-              _buildCategoryList(provider, TransactionType.income),
+              _buildCategoryPieChart(provider, TransactionType.income),
               const SizedBox(height: 24),
               Text(
-                'Top Spending Categories',
+                'Top Categories',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 16),
@@ -412,20 +482,133 @@ class _ReportsScreenState extends State<ReportsScreen>
       ),
     );
   }
-}
 
-// These classes are kept for future use when charts are re-enabled
-class ChartData {
-  final String category;
-  final double amount;
-  final Color color;
+  Widget _buildIncomeVsExpenseChart(TransactionProvider provider) {
+    final incomeAmount = provider.getTotalIncome();
+    final expenseAmount = provider.getTotalExpense();
 
-  ChartData(this.category, this.amount, this.color);
-}
+    if (incomeAmount == 0 && expenseAmount == 0) {
+      return const SizedBox(
+        height: 300,
+        child: Center(child: Text('No data available')),
+      );
+    }
 
-class TimeSeriesData {
-  final DateTime date;
-  final double amount;
+    return SizedBox(
+      height: 300,
+      child: PieChart(
+        PieChartData(
+          sections: [
+            PieChartSectionData(
+              value: incomeAmount,
+              title: 'Income\n\$${incomeAmount.toStringAsFixed(0)}',
+              color: AppTheme.incomeColor,
+              radius: 100,
+              titleStyle: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            PieChartSectionData(
+              value: expenseAmount,
+              title: 'Expenses\n\$${expenseAmount.toStringAsFixed(0)}',
+              color: AppTheme.expenseColor,
+              radius: 100,
+              titleStyle: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
+          centerSpaceRadius: 50,
+          sectionsSpace: 2,
+        ),
+      ),
+    );
+  }
 
-  TimeSeriesData(this.date, this.amount);
+  Widget _buildTransactionTrendChart(TransactionProvider provider) {
+    final now = DateTime.now();
+    final startDate = DateTime(now.year, now.month - 2, 1); // Last 3 months
+    final transactions = provider.transactions;
+
+    // Group transactions by date
+    final Map<DateTime, double> dailyTotals = {};
+    for (var transaction in transactions) {
+      final date = DateTime(
+        transaction.date.year,
+        transaction.date.month,
+        transaction.date.day,
+      );
+      if (date.isAfter(startDate)) {
+        dailyTotals[date] = (dailyTotals[date] ?? 0) + transaction.amount;
+      }
+    }
+
+    if (dailyTotals.isEmpty) {
+      return const SizedBox(
+        height: 300,
+        child: Center(child: Text('No data available')),
+      );
+    }
+
+    // Sort by date and convert to chart data
+    final sortedDates = dailyTotals.keys.toList()..sort();
+    final spots =
+        sortedDates.asMap().entries.map((entry) {
+          final index = entry.key;
+          final date = entry.value;
+          final amount = dailyTotals[date]!;
+          return FlSpot(index.toDouble(), amount);
+        }).toList();
+
+    return SizedBox(
+      height: 300,
+      child: LineChart(
+        LineChartData(
+          gridData: FlGridData(show: true),
+          titlesData: FlTitlesData(
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (value, meta) {
+                  return Text('\$${value.toInt()}');
+                },
+              ),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (value, meta) {
+                  if (value.toInt() < sortedDates.length) {
+                    final date = sortedDates[value.toInt()];
+                    return Text(DateFormat('MM/dd').format(date));
+                  }
+                  return const Text('');
+                },
+              ),
+            ),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          borderData: FlBorderData(show: true),
+          lineBarsData: [
+            LineChartBarData(
+              spots: spots,
+              isCurved: true,
+              color: Colors.blue,
+              barWidth: 3,
+              dotData: FlDotData(show: true),
+              belowBarData: BarAreaData(
+                show: true,
+                color: Colors.blue.withOpacity(0.3),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

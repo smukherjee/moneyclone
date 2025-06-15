@@ -35,8 +35,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
     # UI Components
-  # syncfusion_flutter_charts: 23.2.7 # Removed due to compatibility issues
-  # syncfusion_flutter_datagrid: 23.2.7 # Removed due to compatibility issues
+  fl_chart: ^0.68.0
   flutter_staggered_grid_view: ^0.7.0
   google_fonts: ^6.1.0
   flutter_svg: ^2.0.10+1

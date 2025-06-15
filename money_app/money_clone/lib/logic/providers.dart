@@ -94,9 +94,10 @@ class TransactionProvider with ChangeNotifier {
   }
 
   List<models.Transaction> getRecentTransactions({int limit = 5}) {
-    final sorted = List<models.Transaction>.from(_transactions)
+    // Sort transactions by date in descending order and take the most recent ones
+    final sortedTransactions = List<models.Transaction>.from(_transactions)
       ..sort((a, b) => b.date.compareTo(a.date));
-    return sorted.take(limit).toList();
+    return sortedTransactions.take(limit).toList();
   }
 
   Map<String, double> getCategorySpending(models.TransactionType type) {

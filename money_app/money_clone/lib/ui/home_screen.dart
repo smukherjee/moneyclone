@@ -31,9 +31,15 @@ class HomeScreen extends StatelessWidget {
       body: RefreshIndicator(
         onRefresh: () {
           // Store providers before async gap to avoid using BuildContext across async gap
-          final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
-          final accountProvider = Provider.of<AccountProvider>(context, listen: false);
-          
+          final transactionProvider = Provider.of<TransactionProvider>(
+            context,
+            listen: false,
+          );
+          final accountProvider = Provider.of<AccountProvider>(
+            context,
+            listen: false,
+          );
+
           return Future.wait([
             transactionProvider.fetchTransactions(),
             accountProvider.fetchAccounts(),
@@ -85,12 +91,14 @@ class HomeScreen extends StatelessWidget {
   Widget _buildExpenseChart(BuildContext context) {
     return Consumer<TransactionProvider>(
       builder: (context, provider, _) {
-        final categorySpending = provider.getCategorySpending(TransactionType.expense);
-        
+        final categorySpending = provider.getCategorySpending(
+          TransactionType.expense,
+        );
+
         if (categorySpending.isEmpty) {
           return const SizedBox(height: 200);
         }
-        
+
         // Build a list representation of the data instead of using SyncFusion charts
         return Container(
           height: 250,
@@ -103,9 +111,7 @@ class HomeScreen extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
-              Expanded(
-                child: _buildCategoryList(categorySpending),
-              ),
+              Expanded(child: _buildCategoryList(categorySpending)),
             ],
           ),
         );
@@ -114,17 +120,21 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildCategoryList(Map<String, double> categorySpending) {
-    final total = categorySpending.values.fold(0.0, (sum, amount) => sum + amount);
-    final sortedEntries = categorySpending.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    
+    final total = categorySpending.values.fold(
+      0.0,
+      (sum, amount) => sum + amount,
+    );
+    final sortedEntries =
+        categorySpending.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+
     return ListView.builder(
       shrinkWrap: true,
       itemCount: sortedEntries.length,
       itemBuilder: (context, index) {
         final entry = sortedEntries[index];
         final percentage = (entry.value / total * 100).toStringAsFixed(1);
-        
+
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: Row(
@@ -175,33 +185,44 @@ class HomeScreen extends StatelessWidget {
   Widget _buildRecentTransactions(BuildContext context) {
     return Consumer<TransactionProvider>(
       builder: (context, provider, _) {
+        if (provider.isLoading) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
         final recentTransactions = provider.getRecentTransactions();
-        
+
         if (recentTransactions.isEmpty) {
           return EmptyStateWidget(
             message: 'No transactions yet. Tap + to add one.',
             icon: Icons.receipt_long_outlined,
             onActionPressed: () {
-              // Navigate to transactions tab to add a new transaction
               context.read<NavigationService>().navigateToTab(1);
             },
             actionLabel: 'Add Transaction',
           );
         }
-        
-        return ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: recentTransactions.length,
-          itemBuilder: (context, index) {
-            return TransactionListItem(
-              transaction: recentTransactions[index],
-              onTap: () {
-                // Navigate to transactions tab to show details
-                context.read<NavigationService>().navigateToTab(1);
-              },
-            );
-          },
+
+        return SizedBox(
+          height: 300,
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            shrinkWrap: true,
+            physics: const ClampingScrollPhysics(),
+            itemCount: recentTransactions.length,
+            itemBuilder: (context, index) {
+              return TransactionListItem(
+                transaction: recentTransactions[index],
+                onTap: () {
+                  context.read<NavigationService>().navigateToTab(1);
+                },
+              );
+            },
+          ),
         );
       },
     );

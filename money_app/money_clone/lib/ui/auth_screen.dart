@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:money_clone/auth/auth_service.dart';
 import 'package:money_clone/ui/theme.dart';
+import 'package:money_clone/utils/logging_service.dart';
 
 class AuthScreen extends StatefulWidget {
   final Widget child;
@@ -13,6 +14,7 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   final AuthService _authService = AuthService();
+  final LoggingService _logger = LoggingService();
   final TextEditingController _pinController = TextEditingController();
   bool _isAuthenticated = false;
   bool _isBiometricAvailable = false;
@@ -36,13 +38,25 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _checkBiometricAvailability() async {
     final isBiometricAvailable = await _authService.isBiometricAvailable();
+    final isBiometricEnrolled = await _authService.isBiometricEnrolled();
+
+    // Don't update state if widget is disposed
+    if (!mounted) return;
+
+    _logger.info(
+      'Biometric status: available=$isBiometricAvailable, enrolled=$isBiometricEnrolled',
+    );
+
     setState(() {
-      _isBiometricAvailable = isBiometricAvailable;
+      _isBiometricAvailable = isBiometricAvailable && isBiometricEnrolled;
       _isCheckingBiometrics = false;
     });
 
     if (isBiometricAvailable) {
-      _authenticateWithBiometrics();
+      // Only enable biometrics if they are actually available
+      await _authService.setUseBiometrics(true);
+      final types = await _authService.getAvailableBiometrics();
+      _logger.info('Available biometric types: $types');
     }
   }
 
@@ -54,13 +68,25 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> _authenticateWithBiometrics() async {
-    if (_isBiometricAvailable) {
-      final authenticated = await _authService.authenticateWithBiometrics();
-      if (authenticated) {
-        setState(() {
-          _isAuthenticated = true;
-        });
-      }
+    if (!_isBiometricAvailable) return;
+
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final authenticated = await _authService.authenticateWithBiometrics();
+
+    if (!mounted) return;
+
+    if (authenticated) {
+      setState(() {
+        _isAuthenticated = true;
+      });
+    } else {
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Biometric authentication failed. Please try again or use PIN.',
+          ),
+        ),
+      );
     }
   }
 
@@ -191,12 +217,22 @@ class _AuthScreenState extends State<AuthScreen> {
                             _isPinSetup ? _authenticateWithPIN : _setupPIN,
                         child: Text(_isPinSetup ? 'Unlock' : 'Set PIN'),
                       ),
-                      if (_isPinSetup && _isBiometricAvailable) ...[
-                        const SizedBox(height: 24),
-                        TextButton.icon(
+                      if (_isPinSetup &&
+                          _isBiometricAvailable &&
+                          !_isCheckingBiometrics) ...[
+                        const SizedBox(height: 16),
+                        const Text(
+                          'or',
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
                           onPressed: _authenticateWithBiometrics,
                           icon: const Icon(Icons.fingerprint),
-                          label: const Text('Use biometric authentication'),
+                          label: const Text('Use Fingerprint or Face ID'),
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 48),
+                          ),
                         ),
                       ],
                     ],

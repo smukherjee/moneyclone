@@ -20,11 +20,15 @@ void initPlatformSpecificFeatures() {
 
   // For desktop platforms only
   try {
-    if (platform.isWindows || platform.isLinux) {
+    if (platform.isWindows || platform.isLinux || platform.isMacOS) {
       sqfliteFfiInit();
       databaseFactory = databaseFactoryFfi;
       _logger.info(
-        'SQLite FFI initialized for ${platform.isWindows ? 'Windows' : 'Linux'}',
+        'SQLite FFI initialized for ${platform.isWindows
+            ? 'Windows'
+            : platform.isLinux
+            ? 'Linux'
+            : 'macOS'}',
       );
     }
   } catch (e) {
