@@ -5,9 +5,24 @@ import 'package:money_clone/ui/home_screen.dart';
 import 'package:money_clone/ui/reports_screen.dart';
 import 'package:money_clone/ui/transaction_screen.dart';
 import 'package:money_clone/services/navigation_service.dart';
+import 'package:money_clone/logic/providers.dart';
 
-class MainScreen extends StatelessWidget {
+class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
+
+  @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize accounts when the app starts
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AccountProvider>(context, listen: false).fetchAccounts();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,13 +67,17 @@ class MainScreen extends StatelessWidget {
                 ),
               ],
             ),
-            floatingActionButton: navigationService.floatingActionButtonLabel.isEmpty 
-              ? null 
-              : FloatingActionButton(
-                  onPressed: () => navigationService.onFloatingActionButtonPressed(context),
-                  tooltip: navigationService.floatingActionButtonLabel,
-                  child: const Icon(Icons.add),
-                ),
+            floatingActionButton:
+                navigationService.floatingActionButtonLabel.isEmpty
+                    ? null
+                    : FloatingActionButton(
+                      onPressed:
+                          () => navigationService.onFloatingActionButtonPressed(
+                            context,
+                          ),
+                      tooltip: navigationService.floatingActionButtonLabel,
+                      child: const Icon(Icons.add),
+                    ),
           );
         },
       ),

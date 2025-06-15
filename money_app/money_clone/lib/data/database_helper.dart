@@ -159,14 +159,46 @@ class DatabaseHelper {
 
   Future<void> _createDefaultAccount(Database db) async {
     final uuid = Uuid();
-    await db.insert('accounts', {
-      'id': uuid.v4(),
-      'name': 'Cash',
-      'balance': 0.0,
-      'type': models.AccountType.cash.toString(),
-      'accountNumber': null,
-      'bankName': null,
-    });
+
+    // Create multiple sample accounts for better UX
+    final defaultAccounts = [
+      {
+        'id': uuid.v4(),
+        'name': 'Cash',
+        'balance': 500.0,
+        'type': models.AccountType.cash.toString(),
+        'accountNumber': null,
+        'bankName': null,
+      },
+      {
+        'id': uuid.v4(),
+        'name': 'Main Checking',
+        'balance': 2500.0,
+        'type': models.AccountType.checking.toString(),
+        'accountNumber': '****1234',
+        'bankName': 'First National Bank',
+      },
+      {
+        'id': uuid.v4(),
+        'name': 'Savings Account',
+        'balance': 10000.0,
+        'type': models.AccountType.savings.toString(),
+        'accountNumber': '****5678',
+        'bankName': 'First National Bank',
+      },
+      {
+        'id': uuid.v4(),
+        'name': 'Credit Card',
+        'balance': -850.0,
+        'type': models.AccountType.creditCard.toString(),
+        'accountNumber': '****9012',
+        'bankName': 'Capital Credit',
+      },
+    ];
+
+    for (final account in defaultAccounts) {
+      await db.insert('accounts', account);
+    }
   }
 
   // Transaction operations
@@ -181,9 +213,7 @@ class DatabaseHelper {
     await db.insert('transactions', transactionMap);
 
     // Update account balance
-    if (transaction.accountId != null) {
-      await _updateAccountBalance(transaction.accountId!, transaction);
-    }
+    await _updateAccountBalance(transaction.accountId, transaction);
 
     return id;
   }
@@ -264,23 +294,21 @@ class DatabaseHelper {
     );
 
     // Update account balance
-    if (transaction.accountId != null && oldTransaction != null) {
+    if (oldTransaction != null) {
       // If account changed, update both accounts
       if (oldTransaction.accountId != transaction.accountId) {
-        if (oldTransaction.accountId != null) {
-          // Reverse the old transaction effect
-          await _updateAccountBalance(
-            oldTransaction.accountId!,
-            oldTransaction,
-            isReversal: true,
-          );
-        }
+        // Reverse the old transaction effect
+        await _updateAccountBalance(
+          oldTransaction.accountId,
+          oldTransaction,
+          isReversal: true,
+        );
         // Apply new transaction
-        await _updateAccountBalance(transaction.accountId!, transaction);
+        await _updateAccountBalance(transaction.accountId, transaction);
       } else {
         // Same account, update with the difference
         await _updateAccountBalanceDifference(
-          transaction.accountId!,
+          transaction.accountId,
           oldTransaction,
           transaction,
         );
@@ -303,9 +331,9 @@ class DatabaseHelper {
     );
 
     // Update account balance
-    if (transaction != null && transaction.accountId != null) {
+    if (transaction != null) {
       await _updateAccountBalance(
-        transaction.accountId!,
+        transaction.accountId,
         transaction,
         isReversal: true,
       );
@@ -466,25 +494,17 @@ class DatabaseHelper {
   }) async {
     final db = await database;
     final account = await getAccount(accountId);
+
     if (account == null) return;
 
-    double balanceChange = 0;
+    double balanceChange = transaction.amount;
 
-    switch (transaction.type) {
-      case models.TransactionType.income:
-        balanceChange = transaction.amount;
-        break;
-      case models.TransactionType.expense:
-        balanceChange = -transaction.amount;
-        break;
-      case models.TransactionType.transfer:
-        // For transfers, we need to know if this is source or destination account
-        // This would be handled better with a more complex transfer model
-        balanceChange = -transaction.amount;
-        break;
+    // For expenses, subtract from balance; for income, add to balance
+    if (transaction.type == models.TransactionType.expense) {
+      balanceChange = -balanceChange;
     }
 
-    // If reversing (e.g., for deletion), invert the change
+    // If this is a reversal (delete/undo), reverse the change
     if (isReversal) {
       balanceChange = -balanceChange;
     }
@@ -606,5 +626,23 @@ class DatabaseHelper {
     }
 
     return result;
+  }
+
+  // Get default account ID for use when creating transactions
+  Future<String> getDefaultAccountId() async {
+    final accounts = await getAccounts();
+    if (accounts.isNotEmpty) {
+      return accounts.first.id;
+    }
+
+    // If no accounts exist, create a default one
+    final defaultAccount = models.Account(
+      id: const Uuid().v4(),
+      name: 'Cash',
+      balance: 0.0,
+      type: models.AccountType.cash,
+    );
+
+    return await insertAccount(defaultAccount);
   }
 }

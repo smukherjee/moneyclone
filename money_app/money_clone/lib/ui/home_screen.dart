@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:money_clone/data/models.dart';
 import 'package:money_clone/logic/providers.dart';
 import 'package:money_clone/ui/widgets.dart';
+import 'package:money_clone/ui/settings_screen.dart';
 import 'package:money_clone/services/navigation_service.dart';
 import 'package:provider/provider.dart';
 
@@ -23,7 +24,10 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () {
-              // Navigate to settings
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
             },
           ),
         ],
@@ -55,7 +59,9 @@ class HomeScreen extends StatelessWidget {
                 builder: (context, transactionProvider, accountProvider, _) {
                   final totalIncome = transactionProvider.getTotalIncome();
                   final totalExpense = transactionProvider.getTotalExpense();
-                  final balance = transactionProvider.getBalance();
+                  final balance =
+                      accountProvider
+                          .getTotalBalance(); // Use account balances instead of transaction calculation
 
                   return BalanceCard(
                     balance: balance,

@@ -15,7 +15,7 @@ class Transaction {
   final String? category;
   final String? description;
   final PaymentMethod paymentMethod;
-  final String? accountId;
+  final String accountId;
 
   Transaction({
     required this.id,
@@ -26,7 +26,7 @@ class Transaction {
     this.category,
     this.description,
     required this.paymentMethod,
-    this.accountId,
+    required this.accountId,
   });
 
   Map<String, dynamic> toMap() {
@@ -50,14 +50,16 @@ class Transaction {
       amount: map['amount'],
       date: DateTime.parse(map['date']),
       type: TransactionType.values.firstWhere(
-          (e) => e.toString() == map['type'],
-          orElse: () => TransactionType.expense),
+        (e) => e.toString() == map['type'],
+        orElse: () => TransactionType.expense,
+      ),
       category: map['category'],
       description: map['description'],
       paymentMethod: PaymentMethod.values.firstWhere(
-          (e) => e.toString() == map['paymentMethod'],
-          orElse: () => PaymentMethod.other),
-      accountId: map['accountId'],
+        (e) => e.toString() == map['paymentMethod'],
+        orElse: () => PaymentMethod.other,
+      ),
+      accountId: map['accountId'] ?? 'default',
     );
   }
 }
@@ -82,7 +84,8 @@ class Account {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'name': name,      'balance': balance,
+      'name': name,
+      'balance': balance,
       'type': 'AccountType.${type.name}',
       'accountNumber': accountNumber,
       'bankName': bankName,
@@ -92,12 +95,15 @@ class Account {
   factory Account.fromMap(Map<String, dynamic> map) {
     return Account(
       id: map['id'],
-      name: map['name'],      balance: map['balance'],
-      type: map['type'] != null
-          ? AccountType.values.firstWhere(
-              (e) => 'AccountType.${e.name}' == map['type'],
-              orElse: () => AccountType.other)
-          : AccountType.other,
+      name: map['name'],
+      balance: map['balance'],
+      type:
+          map['type'] != null
+              ? AccountType.values.firstWhere(
+                (e) => 'AccountType.${e.name}' == map['type'],
+                orElse: () => AccountType.other,
+              )
+              : AccountType.other,
       accountNumber: map['accountNumber'],
       bankName: map['bankName'],
     );
@@ -118,12 +124,7 @@ class Category {
   });
 
   Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'icon': icon,
-      'type': type.toString(),
-    };
+    return {'id': id, 'name': name, 'icon': icon, 'type': type.toString()};
   }
 
   factory Category.fromMap(Map<String, dynamic> map) {
@@ -132,8 +133,9 @@ class Category {
       name: map['name'],
       icon: map['icon'],
       type: TransactionType.values.firstWhere(
-          (e) => e.toString() == map['type'],
-          orElse: () => TransactionType.expense),
+        (e) => e.toString() == map['type'],
+        orElse: () => TransactionType.expense,
+      ),
     );
   }
 }

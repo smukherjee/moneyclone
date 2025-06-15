@@ -157,7 +157,7 @@ class AccountsScreen extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: () {
-          // Navigate to account detail screen
+          _showEditAccountDialog(context, account);
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
@@ -230,10 +230,21 @@ class AccountsScreen extends StatelessWidget {
       builder: (context) => const AddAccountSheet(),
     );
   }
+
+  void _showEditAccountDialog(BuildContext context, models.Account account) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AddAccountSheet(accountToEdit: account),
+    );
+  }
 }
 
 class AddAccountSheet extends StatefulWidget {
-  const AddAccountSheet({super.key});
+  const AddAccountSheet({super.key, this.accountToEdit});
+
+  final models.Account? accountToEdit;
 
   @override
   State<AddAccountSheet> createState() => _AddAccountSheetState();
@@ -246,6 +257,28 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
   final _accountNumberController = TextEditingController();
   final _bankNameController = TextEditingController();
   models.AccountType _selectedAccountType = models.AccountType.checking;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.accountToEdit != null) {
+      _populateFields(widget.accountToEdit!);
+    }
+  }
+
+  void _populateFields(models.Account account) {
+    _nameController.text = account.name;
+    _balanceController.text = account.balance.toString();
+    _selectedAccountType = account.type;
+
+    if (account.bankName != null) {
+      _bankNameController.text = account.bankName!;
+    }
+
+    if (account.accountNumber != null) {
+      _accountNumberController.text = account.accountNumber!;
+    }
+  }
 
   @override
   void dispose() {
@@ -288,7 +321,7 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Add Account',
+                  widget.accountToEdit == null ? 'Add Account' : 'Edit Account',
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 24),
@@ -322,7 +355,9 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
                             decoration: BoxDecoration(
                               color:
                                   isSelected
-                                      ? AppTheme.primaryColor.withAlpha((0.1 * 255).round())
+                                      ? AppTheme.primaryColor.withAlpha(
+                                        (0.1 * 255).round(),
+                                      )
                                       : Colors.grey.shade100,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
@@ -431,7 +466,11 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
                 // Save button
                 ElevatedButton(
                   onPressed: _saveAccount,
-                  child: const Text('Save Account'),
+                  child: Text(
+                    widget.accountToEdit == null
+                        ? 'Save Account'
+                        : 'Update Account',
+                  ),
                 ),
               ],
             ),
@@ -444,7 +483,7 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
   void _saveAccount() {
     if (_formKey.currentState!.validate()) {
       final account = models.Account(
-        id: const Uuid().v4(),
+        id: widget.accountToEdit?.id ?? const Uuid().v4(),
         name: _nameController.text,
         balance: double.parse(_balanceController.text),
         type: _selectedAccountType,
@@ -456,7 +495,13 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
                 : _accountNumberController.text,
       );
 
-      Provider.of<AccountProvider>(context, listen: false).addAccount(account);
+      final provider = Provider.of<AccountProvider>(context, listen: false);
+
+      if (widget.accountToEdit != null) {
+        provider.updateAccount(account);
+      } else {
+        provider.addAccount(account);
+      }
 
       Navigator.pop(context);
     }

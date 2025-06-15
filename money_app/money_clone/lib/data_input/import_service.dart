@@ -233,6 +233,8 @@ class ImportService {
               date: date,
               type: type,
               paymentMethod: models.PaymentMethod.other,
+              accountId:
+                  'default', // Will be replaced with actual default account ID
             ),
           );
         } catch (e) {

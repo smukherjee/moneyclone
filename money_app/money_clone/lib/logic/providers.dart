@@ -115,12 +115,9 @@ class TransactionProvider with ChangeNotifier {
 class AccountProvider with ChangeNotifier {
   final DatabaseHelper _dbHelper = DatabaseHelper();
   final LoggingService _logger = LoggingService();
+
   List<models.Account> _accounts = [];
   bool _isLoading = false;
-
-  AccountProvider() {
-    fetchAccounts();
-  }
 
   List<models.Account> get accounts => _accounts;
   bool get isLoading => _isLoading;
@@ -170,8 +167,16 @@ class AccountProvider with ChangeNotifier {
     }
   }
 
+  models.Account? getAccountById(String id) {
+    try {
+      return _accounts.firstWhere((account) => account.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+
   double getTotalBalance() {
-    return _accounts.fold(0, (sum, account) => sum + account.balance);
+    return _accounts.fold(0.0, (sum, account) => sum + account.balance);
   }
 }
 
