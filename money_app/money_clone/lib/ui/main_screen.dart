@@ -55,9 +55,9 @@ class MainScreen extends StatelessWidget {
             floatingActionButton: navigationService.floatingActionButtonLabel.isEmpty 
               ? null 
               : FloatingActionButton(
-                  child: const Icon(Icons.add),
                   onPressed: () => navigationService.onFloatingActionButtonPressed(context),
                   tooltip: navigationService.floatingActionButtonLabel,
+                  child: const Icon(Icons.add),
                 ),
           );
         },

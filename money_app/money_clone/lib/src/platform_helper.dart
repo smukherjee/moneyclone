@@ -3,7 +3,6 @@
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:money_clone/utils/logging_service.dart';
 
 // Conditionally import platform-specific libraries
