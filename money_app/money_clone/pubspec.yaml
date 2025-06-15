@@ -49,6 +49,9 @@ dependencies:
   sqflite_common_ffi: ^2.3.2+1
   path_provider: ^2.1.2
   path: ^1.8.3
+
+  # Logging
+  logger: ^2.0.2+1
   
   # Authentication
   local_auth: ^2.1.8
@@ -94,8 +97,8 @@ flutter:
   uses-material-design: true
 
   assets:
-    # Add your image assets here if needed
-    # - images/a_dot_burr.jpeg
+    - assets/images/
+    - assets/fonts/
     # - images/a_dot_ham.jpeg
 
   fonts:

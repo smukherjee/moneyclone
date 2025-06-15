@@ -7,16 +7,12 @@ class TransactionListItem extends StatelessWidget {
   final Transaction transaction;
   final VoidCallback? onTap;
 
-  const TransactionListItem({
-    super.key,
-    required this.transaction,
-    this.onTap,
-  });
+  const TransactionListItem({super.key, required this.transaction, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('MMM dd, yyyy');
-    
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: InkWell(
@@ -29,7 +25,7 @@ class TransactionListItem extends StatelessWidget {
               // Category icon or transaction type indicator
               _buildTransactionIcon(),
               const SizedBox(width: 16),
-              
+
               // Title and date
               Expanded(
                 child: Column(
@@ -46,7 +42,8 @@ class TransactionListItem extends StatelessWidget {
                       dateFormat.format(transaction.date),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
-                    if (transaction.description != null && transaction.description!.isNotEmpty)
+                    if (transaction.description != null &&
+                        transaction.description!.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
@@ -59,7 +56,7 @@ class TransactionListItem extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               // Amount
               Text(
                 _formatAmount(transaction.amount, transaction.type),
@@ -74,45 +71,41 @@ class TransactionListItem extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildTransactionIcon() {
     Color backgroundColor;
     IconData iconData;
-    
+
     switch (transaction.type) {
       case TransactionType.income:
-        backgroundColor = AppTheme.incomeColor.withOpacity(0.2);
+        backgroundColor = AppTheme.incomeColor.withAlpha((0.2 * 255).round());
         iconData = Icons.arrow_downward;
         break;
       case TransactionType.expense:
-        backgroundColor = AppTheme.expenseColor.withOpacity(0.2);
+        backgroundColor = AppTheme.expenseColor.withAlpha((0.2 * 255).round());
         iconData = Icons.arrow_upward;
         break;
       case TransactionType.transfer:
-        backgroundColor = AppTheme.transferColor.withOpacity(0.2);
+        backgroundColor = AppTheme.transferColor.withAlpha((0.2 * 255).round());
         iconData = Icons.swap_horiz;
         break;
     }
-    
+
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(
-        iconData,
-        color: _getAmountColor(transaction.type),
-        size: 20,
-      ),
+      child: Icon(iconData, color: _getAmountColor(transaction.type), size: 20),
     );
   }
-  
+
   String _formatAmount(double amount, TransactionType type) {
     final currencyFormat = NumberFormat.currency(symbol: '\$');
     return currencyFormat.format(amount);
   }
-  
+
   Color _getAmountColor(TransactionType type) {
     switch (type) {
       case TransactionType.income:
@@ -142,12 +135,10 @@ class BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currencyFormat = NumberFormat.currency(symbol: '\$');
-    
+
     return Card(
       margin: const EdgeInsets.all(16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       color: AppTheme.primaryColor,
       child: InkWell(
         onTap: onTap,
@@ -160,7 +151,7 @@ class BalanceCard extends StatelessWidget {
               Text(
                 'Current Balance',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withAlpha((0.8 * 255).round()),
                 ),
               ),
               const SizedBox(height: 8),
@@ -183,14 +174,20 @@ class BalanceCard extends StatelessWidget {
                           children: [
                             Icon(
                               Icons.arrow_downward,
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withAlpha(
+                                (0.8 * 255).round(),
+                              ),
                               size: 16,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               'Income',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.white.withOpacity(0.8),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.copyWith(
+                                color: Colors.white.withAlpha(
+                                  (0.8 * 255).round(),
+                                ),
                               ),
                             ),
                           ],
@@ -198,7 +195,9 @@ class BalanceCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           currencyFormat.format(income),
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
@@ -206,14 +205,14 @@ class BalanceCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
+
                   // Divider
                   Container(
                     height: 40,
                     width: 1,
-                    color: Colors.white.withOpacity(0.3),
+                    color: Colors.white.withAlpha((0.3 * 255).round()),
                   ),
-                  
+
                   // Expenses section
                   Expanded(
                     child: Padding(
@@ -225,14 +224,20 @@ class BalanceCard extends StatelessWidget {
                             children: [
                               Icon(
                                 Icons.arrow_upward,
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withAlpha(
+                                  (0.8 * 255).round(),
+                                ),
                                 size: 16,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 'Expenses',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Colors.white.withOpacity(0.8),
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.copyWith(
+                                  color: Colors.white.withAlpha(
+                                    (0.8 * 255).round(),
+                                  ),
                                 ),
                               ),
                             ],
@@ -240,7 +245,9 @@ class BalanceCard extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             currencyFormat.format(expenses),
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleMedium?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
@@ -263,11 +270,7 @@ class SectionHeader extends StatelessWidget {
   final String title;
   final VoidCallback? onSeeAllPressed;
 
-  const SectionHeader({
-    super.key,
-    required this.title,
-    this.onSeeAllPressed,
-  });
+  const SectionHeader({super.key, required this.title, this.onSeeAllPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -276,10 +279,7 @@ class SectionHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
+          Text(title, style: Theme.of(context).textTheme.titleLarge),
           if (onSeeAllPressed != null)
             TextButton(
               onPressed: onSeeAllPressed,
@@ -350,18 +350,14 @@ class EmptyStateWidget extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 80,
-              color: Colors.grey.shade400,
-            ),
+            Icon(icon, size: 80, color: Colors.grey.shade400),
             const SizedBox(height: 16),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.grey.shade600,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(color: Colors.grey.shade600),
             ),
             if (onActionPressed != null && actionLabel != null)
               Padding(

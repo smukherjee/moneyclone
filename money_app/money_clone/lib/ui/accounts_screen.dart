@@ -113,9 +113,9 @@ class AccountsScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: AppTheme.primaryColor.withAlpha((0.2 * 255).round()),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -125,7 +125,7 @@ class AccountsScreen extends StatelessWidget {
           Text(
             'Total Balance',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withAlpha((0.8 * 255).round()),
             ),
           ),
           const SizedBox(height: 8),
@@ -140,7 +140,7 @@ class AccountsScreen extends StatelessWidget {
           Text(
             'Total of ${provider.accounts.length} accounts',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withAlpha((0.8 * 255).round()),
             ),
           ),
         ],
@@ -168,7 +168,7 @@ class AccountsScreen extends StatelessWidget {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withAlpha((0.1 * 255).round()),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -322,7 +322,7 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
                             decoration: BoxDecoration(
                               color:
                                   isSelected
-                                      ? AppTheme.primaryColor.withOpacity(0.1)
+                                      ? AppTheme.primaryColor.withAlpha((0.1 * 255).round())
                                       : Colors.grey.shade100,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(

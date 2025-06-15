@@ -13,10 +13,17 @@ class ReportsScreen extends StatefulWidget {
   State<ReportsScreen> createState() => _ReportsScreenState();
 }
 
-class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProviderStateMixin {
+class _ReportsScreenState extends State<ReportsScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _selectedPeriod = 'This Month';
-  final List<String> _periods = ['This Week', 'This Month', 'Last 3 Months', 'This Year', 'Custom'];
+  final List<String> _periods = [
+    'This Week',
+    'This Month',
+    'Last 3 Months',
+    'This Year',
+    'Custom',
+  ];
 
   @override
   void initState() {
@@ -37,10 +44,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
         title: const Text('Reports & Analytics'),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Overview'),
-            Tab(text: 'Categories'),
-          ],
+          tabs: const [Tab(text: 'Overview'), Tab(text: 'Categories')],
         ),
       ),
       body: Column(
@@ -49,10 +53,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: [
-                _buildOverviewTab(),
-                _buildCategoriesTab(),
-              ],
+              children: [_buildOverviewTab(), _buildCategoriesTab()],
             ),
           ),
         ],
@@ -69,10 +70,13 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           prefixIcon: Icon(Icons.calendar_today),
         ),
         value: _selectedPeriod,
-        items: _periods.map((period) => DropdownMenuItem(
-          value: period,
-          child: Text(period),
-        )).toList(),
+        items:
+            _periods
+                .map(
+                  (period) =>
+                      DropdownMenuItem(value: period, child: Text(period)),
+                )
+                .toList(),
         onChanged: (value) {
           if (value != null) {
             setState(() {
@@ -100,8 +104,8 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
               ),
               const SizedBox(height: 16),
               _buildPlaceholderChart(
-                'Income vs Expenses Chart', 
-                'Income: \$${provider.getTotalIncome().toStringAsFixed(2)}\nExpenses: \$${provider.getTotalExpense().toStringAsFixed(2)}'
+                'Income vs Expenses Chart',
+                'Income: \$${provider.getTotalIncome().toStringAsFixed(2)}\nExpenses: \$${provider.getTotalExpense().toStringAsFixed(2)}',
               ),
               const SizedBox(height: 24),
               Text(
@@ -109,7 +113,10 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 16),
-              _buildPlaceholderChart('Transaction Trend Chart', 'Historical transaction data will be displayed here'),
+              _buildPlaceholderChart(
+                'Transaction Trend Chart',
+                'Historical transaction data will be displayed here',
+              ),
             ],
           ),
         );
@@ -151,6 +158,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
       },
     );
   }
+
   Widget _buildSummaryCards(TransactionProvider provider) {
     final totalIncome = provider.getTotalIncome();
     final totalExpense = provider.getTotalExpense();
@@ -165,10 +173,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.arrow_downward,
-                    color: AppTheme.incomeColor,
-                  ),
+                  const Icon(Icons.arrow_downward, color: AppTheme.incomeColor),
                   const SizedBox(height: 8),
                   Text(
                     'Income',
@@ -195,10 +200,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.arrow_upward,
-                    color: AppTheme.expenseColor,
-                  ),
+                  const Icon(Icons.arrow_upward, color: AppTheme.expenseColor),
                   const SizedBox(height: 8),
                   Text(
                     'Expenses',
@@ -260,21 +262,29 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
   }
 
   // List representation of category data
-  Widget _buildCategoryList(TransactionProvider provider, TransactionType type) {
+  Widget _buildCategoryList(
+    TransactionProvider provider,
+    TransactionType type,
+  ) {
     final categorySpending = provider.getCategorySpending(type);
-    
+
     if (categorySpending.isEmpty) {
       return SizedBox(
         height: 200,
         child: Center(
-          child: Text('No ${type == TransactionType.income ? 'income' : 'expense'} data available for the selected period'),
+          child: Text(
+            'No ${type == TransactionType.income ? 'income' : 'expense'} data available for the selected period',
+          ),
         ),
       );
     }
-    
+
     final currencyFormat = NumberFormat.currency(symbol: '\$');
-    final total = categorySpending.values.fold(0.0, (sum, amount) => sum + amount);
-    
+    final total = categorySpending.values.fold(
+      0.0,
+      (sum, amount) => sum + amount,
+    );
+
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade300),
@@ -303,14 +313,16 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
             itemBuilder: (context, index) {
               final entry = categorySpending.entries.elementAt(index);
               final percentage = (entry.value / total * 100).toStringAsFixed(1);
-              
+
               return ListTile(
                 title: Text(entry.key),
                 subtitle: LinearProgressIndicator(
                   value: entry.value / total,
                   backgroundColor: Colors.grey.shade200,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    type == TransactionType.income ? AppTheme.incomeColor : AppTheme.expenseColor,
+                    type == TransactionType.income
+                        ? AppTheme.incomeColor
+                        : AppTheme.expenseColor,
                   ),
                 ),
                 trailing: Column(
@@ -318,7 +330,13 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(currencyFormat.format(entry.value)),
-                    Text('$percentage%', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                    Text(
+                      '$percentage%',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
                   ],
                 ),
               );
@@ -331,8 +349,10 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
 
   // List of top spending categories
   Widget _buildTopCategoriesList(TransactionProvider provider) {
-    final categorySpending = provider.getCategorySpending(TransactionType.expense);
-    
+    final categorySpending = provider.getCategorySpending(
+      TransactionType.expense,
+    );
+
     if (categorySpending.isEmpty) {
       return const SizedBox(
         height: 200,
@@ -341,14 +361,15 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
         ),
       );
     }
-    
+
     // Sort by amount (descending) and take top 5
-    final sortedEntries = categorySpending.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    
+    final sortedEntries =
+        categorySpending.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+
     final topCategories = sortedEntries.take(5).toList();
     final currencyFormat = NumberFormat.currency(symbol: '\$');
-    
+
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade300),
@@ -373,8 +394,13 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           for (var i = 0; i < topCategories.length; i++)
             ListTile(
               leading: CircleAvatar(
-                backgroundColor: AppTheme.expenseColor.withOpacity(0.8),
-                child: Text('${i + 1}', style: const TextStyle(color: Colors.white)),
+                backgroundColor: AppTheme.expenseColor.withAlpha(
+                  (0.8 * 255).round(),
+                ),
+                child: Text(
+                  '${i + 1}',
+                  style: const TextStyle(color: Colors.white),
+                ),
               ),
               title: Text(topCategories[i].key),
               trailing: Text(

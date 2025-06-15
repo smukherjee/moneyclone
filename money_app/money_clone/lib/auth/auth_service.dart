@@ -2,9 +2,11 @@ import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:money_clone/utils/logging_service.dart';
 
 class AuthService {
   final LocalAuthentication _localAuth = LocalAuthentication();
+  final LoggingService _logger = LoggingService();
   static const String _pinKey = 'user_pin';
   static const String _useBiometricsKey = 'use_biometrics';
 
@@ -13,26 +15,29 @@ class AuthService {
       // Biometric authentication is not available on web
       return false;
     }
-    
+
     try {
-      final bool canAuthenticateWithBiometrics = await _localAuth.canCheckBiometrics;
-      final bool canAuthenticate = canAuthenticateWithBiometrics || await _localAuth.isDeviceSupported();
+      final bool canAuthenticateWithBiometrics =
+          await _localAuth.canCheckBiometrics;
+      final bool canAuthenticate =
+          canAuthenticateWithBiometrics || await _localAuth.isDeviceSupported();
       return canAuthenticate;
     } on PlatformException catch (e) {
-      print('Error checking biometric availability: $e');
+      _logger.error('Error checking biometric availability', e);
       return false;
     }
   }
+
   Future<List<BiometricType>> getAvailableBiometrics() async {
     if (kIsWeb) {
       // No biometrics available on web
       return [];
     }
-    
+
     try {
       return await _localAuth.getAvailableBiometrics();
     } on PlatformException catch (e) {
-      print('Error getting available biometrics: $e');
+      _logger.error('Error getting available biometrics', e);
       return [];
     }
   }
@@ -42,7 +47,7 @@ class AuthService {
       // Biometric authentication not supported on web
       return false;
     }
-    
+
     try {
       final bool useBiometrics = await _getUseBiometrics();
       if (!useBiometrics) return false;
@@ -55,7 +60,7 @@ class AuthService {
         ),
       );
     } on PlatformException catch (e) {
-      print('Error authenticating with biometrics: $e');
+      _logger.error('Error authenticating with biometrics', e);
       return false;
     }
   }
@@ -70,7 +75,7 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       return await prefs.setString(_pinKey, pin);
     } catch (e) {
-      print('Error setting PIN: $e');
+      _logger.error('Error setting PIN', e);
       return false;
     }
   }
@@ -84,7 +89,7 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getString(_pinKey);
     } catch (e) {
-      print('Error getting stored PIN: $e');
+      _logger.error('Error getting stored PIN', e);
       return null;
     }
   }
@@ -94,7 +99,7 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       return await prefs.setBool(_useBiometricsKey, value);
     } catch (e) {
-      print('Error setting use biometrics preference: $e');
+      _logger.error('Error setting use biometrics preference', e);
       return false;
     }
   }
@@ -104,7 +109,7 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getBool(_useBiometricsKey) ?? false;
     } catch (e) {
-      print('Error getting use biometrics preference: $e');
+      _logger.error('Error getting use biometrics preference', e);
       return false;
     }
   }

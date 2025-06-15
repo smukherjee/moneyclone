@@ -45,6 +45,7 @@ class _AuthScreenState extends State<AuthScreen> {
       _authenticateWithBiometrics();
     }
   }
+
   Future<void> _checkPinSetup() async {
     final storedPin = await _authService.getStoredPIN();
     setState(() {
@@ -64,24 +65,32 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> _authenticateWithPIN() async {
-    if (_pinController.text.isNotEmpty) {
-      final authenticated = await _authService.authenticateWithPIN(_pinController.text);
-      if (authenticated) {
-        setState(() {
-          _isAuthenticated = true;
-        });
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid PIN. Please try again.')),
-        );
-        _pinController.clear();
-      }
+    if (_pinController.text.isEmpty) return;
+
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final authenticated = await _authService.authenticateWithPIN(
+      _pinController.text,
+    );
+
+    if (!mounted) return;
+
+    if (authenticated) {
+      setState(() {
+        _isAuthenticated = true;
+      });
+    } else {
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(content: Text('Invalid PIN. Please try again.')),
+      );
+      _pinController.clear();
     }
   }
 
   Future<void> _setupPIN() async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     if (_pinController.text.length < 4) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         const SnackBar(content: Text('PIN must be at least 4 digits')),
       );
       return;
@@ -132,64 +141,66 @@ class _AuthScreenState extends State<AuthScreen> {
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
-          child: _isCheckingBiometrics
-              ? const CircularProgressIndicator()
-              : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.security,
-                      size: 80,
-                      color: AppTheme.primaryColor,
-                    ),
-                    const SizedBox(height: 32),
-                    Text(
-                      _isPinSetup
-                          ? 'Enter PIN to unlock'
-                          : _isConfirmingPin
-                              ? 'Confirm your PIN'
-                              : 'Create a PIN to secure your data',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      _isPinSetup
-                          ? 'Please enter your PIN to access your financial data'
-                          : _isConfirmingPin
-                              ? 'Enter the PIN again to confirm'
-                              : 'This PIN will be used to protect your financial data',
-                      style: Theme.of(context).textTheme.bodyLarge,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 32),
-                    TextField(
-                      controller: _pinController,
-                      decoration: const InputDecoration(
-                        labelText: 'PIN',
-                        hintText: 'Enter your PIN',
-                        prefixIcon: Icon(Icons.lock_outline),
+          child:
+              _isCheckingBiometrics
+                  ? const CircularProgressIndicator()
+                  : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.security,
+                        size: 80,
+                        color: AppTheme.primaryColor,
                       ),
-                      keyboardType: TextInputType.number,
-                      obscureText: true,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 24, letterSpacing: 8),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: _isPinSetup ? _authenticateWithPIN : _setupPIN,
-                      child: Text(_isPinSetup ? 'Unlock' : 'Set PIN'),
-                    ),
-                    if (_isPinSetup && _isBiometricAvailable) ...[
+                      const SizedBox(height: 32),
+                      Text(
+                        _isPinSetup
+                            ? 'Enter PIN to unlock'
+                            : _isConfirmingPin
+                            ? 'Confirm your PIN'
+                            : 'Create a PIN to secure your data',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        _isPinSetup
+                            ? 'Please enter your PIN to access your financial data'
+                            : _isConfirmingPin
+                            ? 'Enter the PIN again to confirm'
+                            : 'This PIN will be used to protect your financial data',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 32),
+                      TextField(
+                        controller: _pinController,
+                        decoration: const InputDecoration(
+                          labelText: 'PIN',
+                          hintText: 'Enter your PIN',
+                          prefixIcon: Icon(Icons.lock_outline),
+                        ),
+                        keyboardType: TextInputType.number,
+                        obscureText: true,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 24, letterSpacing: 8),
+                      ),
                       const SizedBox(height: 24),
-                      TextButton.icon(
-                        onPressed: _authenticateWithBiometrics,
-                        icon: const Icon(Icons.fingerprint),
-                        label: const Text('Use biometric authentication'),
+                      ElevatedButton(
+                        onPressed:
+                            _isPinSetup ? _authenticateWithPIN : _setupPIN,
+                        child: Text(_isPinSetup ? 'Unlock' : 'Set PIN'),
                       ),
+                      if (_isPinSetup && _isBiometricAvailable) ...[
+                        const SizedBox(height: 24),
+                        TextButton.icon(
+                          onPressed: _authenticateWithBiometrics,
+                          icon: const Icon(Icons.fingerprint),
+                          label: const Text('Use biometric authentication'),
+                        ),
+                      ],
                     ],
-                  ],
-                ),
+                  ),
         ),
       ),
     );

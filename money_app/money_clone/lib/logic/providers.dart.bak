@@ -1,0 +1,420 @@
+import 'package:flutter/foundation.dart';
+import 'package:money_clone/data/database_helper.dart';
+import 'package:money_clone/data/models.dart' as models;
+import 'package:money_clone/utils/logging_service.dart';
+import 'package:money_clone/utils/compute_helper.dart';
+
+class TransactionProvider with ChangeNotifier {
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+  final LoggingService _logger = LoggingService();
+  List<models.Transaction> _transactions = [];
+  bool _isLoading = false;
+  models.TransactionType? _filter;
+
+  TransactionProvider() {
+    fetchTransactions();
+  }
+
+  List<models.Transaction> get transactions =>
+      _filter == null
+          ? _transactions
+          : _transactions.where((t) => t.type == _filter).toList();
+
+  bool get isLoading => _isLoading;
+  models.TransactionType? get filter => _filter;
+
+  void setFilter(models.TransactionType? type) {
+    _filter = type;
+    notifyListeners();
+  }
+
+  void clearFilter() {
+    _filter = null;
+    notifyListeners();
+  }
+
+  Future<void> fetchTransactions() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // Get transactions in the background
+      _transactions =
+          await ComputeHelper.runAsync<String, List<models.Transaction>>(
+            _fetchTransactionsBackground,
+            "dummy", // Just a placeholder as we don't need params
+          );
+      
+      // Debug print to check if transactions are being fetched
+      debugPrint('Fetched ${_transactions.length} transactions');
+      if (_transactions.isEmpty) {
+        debugPrint('No transactions found in database');
+      } else {
+        debugPrint('First transaction: ${_transactions.first.title}, ${_transactions.first.amount}');
+      }
+    } catch (e) {
+      _logger.error('Error fetching transactions', e);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Static method to run in separate isolate
+  static Future<List<models.Transaction>> _fetchTransactionsBackground(
+    String _,
+  ) async {
+    try {
+      // Initialize the database directly in the isolate
+      print('ISOLATE: Starting transaction fetch in background isolate');
+      final dbHelper = DatabaseHelper();
+      final transactions = await dbHelper.getTransactions();
+      print('ISOLATE: Fetched ${transactions.length} transactions in background isolate');
+      if (transactions.isNotEmpty) {
+        print('ISOLATE: First transaction: ${transactions.first.title}, ${transactions.first.amount}, ${transactions.first.type}');
+      } else {
+        print('ISOLATE: No transactions found in background isolate');
+      }
+      return transactions;
+    } catch (e) {
+      print('Error in background isolate: $e');
+      print('Stack trace: ${StackTrace.current}');
+      // Return empty list on error
+      return [];
+    }
+  }
+
+  Future<void> addTransaction(models.Transaction transaction) async {
+    try {
+      await _dbHelper.insertTransaction(transaction);
+      await fetchTransactions();
+    } catch (e) {
+      _logger.error('Error adding transaction', e);
+    }
+  }
+
+  Future<void> updateTransaction(models.Transaction transaction) async {
+    try {
+      await _dbHelper.updateTransaction(transaction);
+      await fetchTransactions();
+    } catch (e) {
+      _logger.error('Error updating transaction', e);
+    }
+  }
+
+  Future<void> deleteTransaction(String id) async {
+    try {
+      await _dbHelper.deleteTransaction(id);
+      await fetchTransactions();
+    } catch (e) {
+      _logger.error('Error deleting transaction', e);
+    }
+  }
+
+  double getTotalIncome() {
+    // Use a simple for loop instead of multiple higher-order functions to reduce allocations
+    double total = 0;
+    for (var transaction in _transactions) {
+      if (transaction.type == models.TransactionType.income) {
+        total += transaction.amount;
+      }
+    }
+    return total;
+  }
+
+  double getTotalExpense() {
+    // Use a simple for loop instead of multiple higher-order functions to reduce allocations
+    double total = 0;
+    for (var transaction in _transactions) {
+      if (transaction.type == models.TransactionType.expense) {
+        total += transaction.amount;
+      }
+    }
+    return total;
+  }
+
+  double getBalance() {
+    return getTotalIncome() - getTotalExpense();
+  }
+
+  List<models.Transaction> getRecentTransactions({int limit = 5}) {
+    // This is called during UI rendering, so we keep it optimized but synchronous
+    if (_transactions.isEmpty) return [];
+
+    // Create a copy to avoid modifying the original list
+    final sorted = List<models.Transaction>.from(_transactions);
+
+    // Optimize by using a manual quick sort for recent transactions
+    // (only if we have a lot of transactions)
+    if (sorted.length > 100) {
+      return _getRecentTransactionsOptimized(sorted, limit);
+    }
+
+    // For smaller lists, standard sort is fine
+    sorted.sort((a, b) => b.date.compareTo(a.date));
+    return sorted.take(limit).toList();
+  }
+
+  // Optimized method that only finds the most recent transactions without sorting the entire list
+  List<models.Transaction> _getRecentTransactionsOptimized(
+    List<models.Transaction> transactions,
+    int limit,
+  ) {
+    // If we only need a few recent transactions, we can use a more efficient approach
+    // than sorting the entire list
+
+    final result = <models.Transaction>[];
+    final workingList = List<models.Transaction>.from(transactions);
+
+    // Find and remove the most recent 'limit' transactions
+    for (int i = 0; i < limit && workingList.isNotEmpty; i++) {
+      int mostRecentIndex = 0;
+      DateTime mostRecentDate = workingList[0].date;
+
+      // Find the most recent transaction
+      for (int j = 1; j < workingList.length; j++) {
+        if (workingList[j].date.isAfter(mostRecentDate)) {
+          mostRecentDate = workingList[j].date;
+          mostRecentIndex = j;
+        }
+      }
+
+      // Add to result and remove from working list
+      result.add(workingList[mostRecentIndex]);
+      workingList.removeAt(mostRecentIndex);
+    }
+
+    return result;
+  }
+
+  Map<String, double> getCategorySpending(models.TransactionType type) {
+    final Map<String, double> result = {};
+
+    // Process spending efficiently with a simple loop
+    for (var transaction in _transactions) {
+      if (transaction.type == type) {
+        final category = transaction.category ?? 'Uncategorized';
+        result[category] = (result[category] ?? 0) + transaction.amount;
+      }
+    }
+
+    return result;
+  }
+
+  // Asynchronous version for larger data sets
+  Future<Map<String, double>> getCategorySpendingAsync(
+    models.TransactionType type,
+  ) async {
+    return ComputeHelper.runAsync<Map<String, dynamic>, Map<String, double>>(
+      _getCategorySpendingBackground,
+      {'transactions': _transactions, 'type': type.toString()},
+    );
+  }
+
+  // Static method for background processing
+  static Map<String, double> _getCategorySpendingBackground(
+    Map<String, dynamic> params,
+  ) {
+    // This is now handled by ComputeHelper._isolateWrapper
+    final transactions = params['transactions'] as List<models.Transaction>;
+    final typeStr = params['type'] as String;
+    final type = models.TransactionType.values.firstWhere(
+      (t) => t.toString() == typeStr,
+      orElse: () => models.TransactionType.expense,
+    );
+
+    final Map<String, double> result = {};
+
+    for (var transaction in transactions) {
+      if (transaction.type == type) {
+        final category = transaction.category ?? 'Uncategorized';
+        result[category] = (result[category] ?? 0) + transaction.amount;
+      }
+    }
+
+    return result;
+  }
+}
+
+class AccountProvider with ChangeNotifier {
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+  final LoggingService _logger = LoggingService();
+  List<models.Account> _accounts = [];
+  bool _isLoading = false;
+
+  AccountProvider() {
+    fetchAccounts();
+  }
+
+  List<models.Account> get accounts => _accounts;
+  bool get isLoading => _isLoading;
+
+  Future<void> fetchAccounts() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // Fetch accounts in background
+      _accounts = await ComputeHelper.runAsync<String, List<models.Account>>(
+        _fetchAccountsBackground,
+        "dummy", // Just a placeholder
+      );
+      
+      // Debug print to check if accounts are being fetched
+      debugPrint('Fetched ${_accounts.length} accounts');
+      if (_accounts.isEmpty) {
+        debugPrint('No accounts found in database');
+      } else {
+        debugPrint('First account: ${_accounts.first.name}, ${_accounts.first.balance}');
+      }
+    } catch (e) {
+      _logger.error('Error fetching accounts', e);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Static method to run in separate isolate
+  static Future<List<models.Account>> _fetchAccountsBackground(String _) async {
+    try {
+      // Initialize the database directly in the isolate
+      print('ISOLATE: Starting account fetch in background isolate');
+      final dbHelper = DatabaseHelper();
+      final accounts = await dbHelper.getAccounts();
+      print('ISOLATE: Fetched ${accounts.length} accounts in background isolate');
+      if (accounts.isNotEmpty) {
+        print('ISOLATE: First account: ${accounts.first.name}, ${accounts.first.balance}, ${accounts.first.type}');
+      } else {
+        print('ISOLATE: No accounts found in background isolate');
+      }
+      return accounts;
+    } catch (e) {
+      print('Error in background isolate: $e');
+      print('Stack trace: ${StackTrace.current}');
+      // Return empty list on error
+      return [];
+    }
+  }
+
+  Future<void> addAccount(models.Account account) async {
+    try {
+      await _dbHelper.insertAccount(account);
+      await fetchAccounts();
+    } catch (e) {
+      _logger.error('Error adding account', e);
+    }
+  }
+
+  Future<void> updateAccount(models.Account account) async {
+    try {
+      await _dbHelper.updateAccount(account);
+      await fetchAccounts();
+    } catch (e) {
+      _logger.error('Error updating account', e);
+    }
+  }
+
+  Future<void> deleteAccount(String id) async {
+    try {
+      await _dbHelper.deleteAccount(id);
+      await fetchAccounts();
+    } catch (e) {
+      _logger.error('Error deleting account', e);
+    }
+  }
+
+  double getTotalBalance() {
+    // Use a simple loop for better performance
+    double total = 0;
+    for (var account in _accounts) {
+      total += account.balance;
+    }
+    return total;
+  }
+}
+
+class CategoryProvider with ChangeNotifier {
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+  final LoggingService _logger = LoggingService();
+  List<models.Category> _categories = [];
+  bool _isLoading = false;
+
+  CategoryProvider() {
+    fetchCategories();
+  }
+
+  List<models.Category> get categories => _categories;
+
+  List<models.Category> get expenseCategories {
+    final result = <models.Category>[];
+    for (var category in _categories) {
+      if (category.type == models.TransactionType.expense) {
+        result.add(category);
+      }
+    }
+    return result;
+  }
+
+  List<models.Category> get incomeCategories {
+    final result = <models.Category>[];
+    for (var category in _categories) {
+      if (category.type == models.TransactionType.income) {
+        result.add(category);
+      }
+    }
+    return result;
+  }
+
+  bool get isLoading => _isLoading;
+
+  Future<void> fetchCategories() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // Fetch categories in background
+      _categories = await ComputeHelper.runAsync<String, List<models.Category>>(
+        _fetchCategoriesBackground,
+        "dummy", // Just a placeholder
+      );
+      
+      // Debug print to check if categories are being fetched
+      debugPrint('Fetched ${_categories.length} categories');
+      if (_categories.isEmpty) {
+        debugPrint('No categories found in database');
+      } else {
+        debugPrint('First category: ${_categories.first.name}, ${_categories.first.type}');
+      }
+    } catch (e) {
+      _logger.error('Error fetching categories', e);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Static method to run in separate isolate
+  static Future<List<models.Category>> _fetchCategoriesBackground(
+    String _,
+  ) async {
+    try {
+      // Initialize the database directly in the isolate
+      print('ISOLATE: Starting category fetch in background isolate');
+      final dbHelper = DatabaseHelper();
+      final categories = await dbHelper.getCategories();
+      print('ISOLATE: Fetched ${categories.length} categories in background isolate');
+      if (categories.isNotEmpty) {
+        print('ISOLATE: First category: ${categories.first.name}, ${categories.first.type}');
+      } else {
+        print('ISOLATE: No categories found in background isolate');
+      }
+      return categories;
+    } catch (e) {
+      print('Error in background isolate: $e');
+      print('Stack trace: ${StackTrace.current}');
+      // Return empty list on error
+      return [];
+    }
+  }
+}

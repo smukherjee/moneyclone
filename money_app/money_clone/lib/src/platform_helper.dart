@@ -4,34 +4,40 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:money_clone/utils/logging_service.dart';
 
 // Conditionally import platform-specific libraries
-import 'platform_io.dart' if (dart.library.html) 'platform_web.dart' as platform;
+import 'platform_io.dart'
+    if (dart.library.html) 'platform_web.dart'
+    as platform;
+
+final _logger = LoggingService();
 
 void initPlatformSpecificFeatures() {
   if (kIsWeb) {
     // Web platform handled separately in WebDatabaseHelper
     return;
   }
-  
+
   // For desktop platforms only
   try {
     if (platform.isWindows || platform.isLinux) {
       sqfliteFfiInit();
       databaseFactory = databaseFactoryFfi;
+      _logger.info(
+        'SQLite FFI initialized for ${platform.isWindows ? 'Windows' : 'Linux'}',
+      );
     }
   } catch (e) {
-    print('Platform initialization error: $e');
+    _logger.error('Platform initialization error', e);
   }
 }
 
 bool isDesktopPlatform() {
   if (kIsWeb) return false;
-  
+
   try {
-    return platform.isWindows || 
-           platform.isLinux || 
-           platform.isMacOS;
+    return platform.isWindows || platform.isLinux || platform.isMacOS;
   } catch (e) {
     return false;
   }
@@ -39,7 +45,7 @@ bool isDesktopPlatform() {
 
 bool isMobilePlatform() {
   if (kIsWeb) return false;
-  
+
   try {
     return platform.isAndroid || platform.isIOS;
   } catch (e) {

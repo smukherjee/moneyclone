@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:money_clone/data/database_helper.dart';
 import 'package:money_clone/data/models.dart' as models;
+import 'package:money_clone/utils/logging_service.dart';
 
 class TransactionProvider with ChangeNotifier {
   final DatabaseHelper _dbHelper = DatabaseHelper();
+  final LoggingService _logger = LoggingService();
   List<models.Transaction> _transactions = [];
   bool _isLoading = false;
   models.TransactionType? _filter;
@@ -12,9 +14,10 @@ class TransactionProvider with ChangeNotifier {
     fetchTransactions();
   }
 
-  List<models.Transaction> get transactions => _filter == null
-      ? _transactions
-      : _transactions.where((t) => t.type == _filter).toList();
+  List<models.Transaction> get transactions =>
+      _filter == null
+          ? _transactions
+          : _transactions.where((t) => t.type == _filter).toList();
 
   bool get isLoading => _isLoading;
   models.TransactionType? get filter => _filter;
@@ -35,10 +38,9 @@ class TransactionProvider with ChangeNotifier {
 
     try {
       _transactions = await _dbHelper.getTransactions();
+      _logger.info('Successfully fetched ${_transactions.length} transactions');
     } catch (e) {
-      if (kDebugMode) {
-        print('Error fetching transactions: $e');
-      }
+      _logger.error('Error fetching transactions', e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -48,33 +50,30 @@ class TransactionProvider with ChangeNotifier {
   Future<void> addTransaction(models.Transaction transaction) async {
     try {
       await _dbHelper.insertTransaction(transaction);
+      _logger.info('Transaction added successfully: ${transaction.title}');
       await fetchTransactions();
     } catch (e) {
-      if (kDebugMode) {
-        print('Error adding transaction: $e');
-      }
+      _logger.error('Error adding transaction', e);
     }
   }
 
   Future<void> updateTransaction(models.Transaction transaction) async {
     try {
       await _dbHelper.updateTransaction(transaction);
+      _logger.info('Transaction updated successfully: ${transaction.title}');
       await fetchTransactions();
     } catch (e) {
-      if (kDebugMode) {
-        print('Error updating transaction: $e');
-      }
+      _logger.error('Error updating transaction', e);
     }
   }
 
   Future<void> deleteTransaction(String id) async {
     try {
       await _dbHelper.deleteTransaction(id);
+      _logger.info('Transaction deleted successfully');
       await fetchTransactions();
     } catch (e) {
-      if (kDebugMode) {
-        print('Error deleting transaction: $e');
-      }
+      _logger.error('Error deleting transaction', e);
     }
   }
 
@@ -114,6 +113,7 @@ class TransactionProvider with ChangeNotifier {
 
 class AccountProvider with ChangeNotifier {
   final DatabaseHelper _dbHelper = DatabaseHelper();
+  final LoggingService _logger = LoggingService();
   List<models.Account> _accounts = [];
   bool _isLoading = false;
 
@@ -130,10 +130,9 @@ class AccountProvider with ChangeNotifier {
 
     try {
       _accounts = await _dbHelper.getAccounts();
+      _logger.info('Successfully fetched ${_accounts.length} accounts');
     } catch (e) {
-      if (kDebugMode) {
-        print('Error fetching accounts: $e');
-      }
+      _logger.error('Error fetching accounts', e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -143,33 +142,30 @@ class AccountProvider with ChangeNotifier {
   Future<void> addAccount(models.Account account) async {
     try {
       await _dbHelper.insertAccount(account);
+      _logger.info('Account added successfully: ${account.name}');
       await fetchAccounts();
     } catch (e) {
-      if (kDebugMode) {
-        print('Error adding account: $e');
-      }
+      _logger.error('Error adding account', e);
     }
   }
 
   Future<void> updateAccount(models.Account account) async {
     try {
       await _dbHelper.updateAccount(account);
+      _logger.info('Account updated successfully: ${account.name}');
       await fetchAccounts();
     } catch (e) {
-      if (kDebugMode) {
-        print('Error updating account: $e');
-      }
+      _logger.error('Error updating account', e);
     }
   }
 
   Future<void> deleteAccount(String id) async {
     try {
       await _dbHelper.deleteAccount(id);
+      _logger.info('Account deleted successfully');
       await fetchAccounts();
     } catch (e) {
-      if (kDebugMode) {
-        print('Error deleting account: $e');
-      }
+      _logger.error('Error deleting account', e);
     }
   }
 
@@ -180,6 +176,7 @@ class AccountProvider with ChangeNotifier {
 
 class CategoryProvider with ChangeNotifier {
   final DatabaseHelper _dbHelper = DatabaseHelper();
+  final LoggingService _logger = LoggingService();
   List<models.Category> _categories = [];
   bool _isLoading = false;
 
@@ -189,9 +186,13 @@ class CategoryProvider with ChangeNotifier {
 
   List<models.Category> get categories => _categories;
   List<models.Category> get expenseCategories =>
-      _categories.where((c) => c.type == models.TransactionType.expense).toList();
+      _categories
+          .where((c) => c.type == models.TransactionType.expense)
+          .toList();
   List<models.Category> get incomeCategories =>
-      _categories.where((c) => c.type == models.TransactionType.income).toList();
+      _categories
+          .where((c) => c.type == models.TransactionType.income)
+          .toList();
   bool get isLoading => _isLoading;
 
   Future<void> fetchCategories() async {
@@ -200,10 +201,9 @@ class CategoryProvider with ChangeNotifier {
 
     try {
       _categories = await _dbHelper.getCategories();
+      _logger.info('Successfully fetched ${_categories.length} categories');
     } catch (e) {
-      if (kDebugMode) {
-        print('Error fetching categories: $e');
-      }
+      _logger.error('Error fetching categories', e);
     } finally {
       _isLoading = false;
       notifyListeners();
