@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:money_clone/data/database_helper.dart';
 import 'package:money_clone/data/models.dart';
 import 'package:money_clone/logic/providers.dart';
-import 'package:money_clone/services/preferences_service.dart';
 import 'package:money_clone/ui/theme.dart';
 import 'package:money_clone/ui/widgets.dart';
 import 'package:provider/provider.dart';
@@ -486,62 +485,80 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
   }
 
   Widget _buildCategorySelector() {
-    return FutureBuilder<List<String>>(
-      future: _getCategoriesForType(_selectedType),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return DropdownButtonFormField<String>(
-            decoration: const InputDecoration(
-              labelText: 'Category',
-              prefixIcon: Icon(Icons.category),
-            ),
-            items: const [],
-            onChanged: null,
-          );
+    final categoryItems = _getCategoryItems();
+    final validCategories = categoryItems.map((item) => item.value).toSet();
+
+    // Ensure selected category is valid for current transaction type
+    // If not valid, use null for the dropdown value
+    String? displayValue = _selectedCategory;
+    if (_selectedCategory != null &&
+        !validCategories.contains(_selectedCategory)) {
+      displayValue = null;
+    }
+
+    return DropdownButtonFormField<String>(
+      decoration: const InputDecoration(
+        labelText: 'Category',
+        prefixIcon: Icon(Icons.category),
+      ),
+      value: displayValue,
+      items: categoryItems,
+      onChanged: (value) {
+        setState(() {
+          _selectedCategory = value;
+        });
+      },
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please select a category';
         }
-
-        final categories = snapshot.data ?? [];
-        final categoryItems =
-            categories
-                .map(
-                  (category) => DropdownMenuItem<String>(
-                    value: category,
-                    child: Text(category),
-                  ),
-                )
-                .toList();
-
-        final validCategories = categoryItems.map((item) => item.value).toSet();
-
-        // Ensure selected category is valid for current transaction type
-        // If not valid, use null for the dropdown value
-        String? displayValue = _selectedCategory;
-        if (_selectedCategory != null &&
-            !validCategories.contains(_selectedCategory)) {
-          displayValue = null;
-        }
-
-        return DropdownButtonFormField<String>(
-          decoration: const InputDecoration(
-            labelText: 'Category',
-            prefixIcon: Icon(Icons.category),
-          ),
-          value: displayValue,
-          items: categoryItems,
-          onChanged: (value) {
-            setState(() {
-              _selectedCategory = value;
-            });
-          },
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please select a category';
-            }
-            return null;
-          },
-        );
+        return null;
       },
     );
+  }
+
+  List<DropdownMenuItem<String>> _getCategoryItems() {
+    // Normally we'd get these from the CategoryProvider
+    final List<String> categories;
+
+    switch (_selectedType) {
+      case TransactionType.income:
+        categories = [
+          'Salary',
+          'Business',
+          'Investments',
+          'Rental Income',
+          'Gifts',
+          'Other',
+        ];
+        break;
+      case TransactionType.expense:
+        categories = [
+          'Food & Dining',
+          'Shopping',
+          'Housing',
+          'Transportation',
+          'Entertainment',
+          'Health & Fitness',
+          'Other',
+        ];
+        break;
+      case TransactionType.transfer:
+        categories = [
+          'Account Transfer',
+          'Savings Transfer',
+          'Investment Transfer',
+          'Other',
+        ];
+        break;
+    }
+
+    return categories
+        .map(
+          (category) =>
+              DropdownMenuItem<String>(value: category, child: Text(category)),
+        )
+        .toList();
   }
 
   Widget _buildPaymentMethodSelector() {
@@ -921,17 +938,5 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
           ),
     );
     return account.name;
-  }
-
-  // Method to get categories for a specific transaction type from preferences
-  Future<List<String>> _getCategoriesForType(TransactionType type) async {
-    switch (type) {
-      case TransactionType.income:
-        return await PreferencesService.getIncomeCategories();
-      case TransactionType.expense:
-        return await PreferencesService.getExpenseCategories();
-      case TransactionType.transfer:
-        return await PreferencesService.getTransferCategories();
-    }
   }
 }
